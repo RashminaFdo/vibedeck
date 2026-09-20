@@ -1,0 +1,328 @@
+{
+  "profiles": [
+    {
+      "id": "media_audio",
+      "name": "Media & Audio",
+      "columns": 3,
+      "rows": 3,
+      "buttons": [
+        {
+          "id": "btn_play_pause",
+          "title": "Play/Pause",
+          "action_type": "media",
+          "payload": {
+            "key": "media_play_pause"
+          },
+          "color": "#6C5CE7",
+          "icon": "play_arrow"
+        },
+        {
+          "id": "btn_prev",
+          "title": "Prev Track",
+          "action_type": "media",
+          "payload": {
+            "key": "media_prev"
+          },
+          "color": "#0984E3",
+          "icon": "skip_previous"
+        },
+        {
+          "id": "btn_next",
+          "title": "Next Track",
+          "action_type": "media",
+          "payload": {
+            "key": "media_next"
+          },
+          "color": "#00CEC9",
+          "icon": "skip_next"
+        },
+        {
+          "id": "btn_mute",
+          "title": "Mute Master",
+          "action_type": "media",
+          "payload": {
+            "key": "volume_mute"
+          },
+          "color": "#D63031",
+          "icon": "volume_off"
+        },
+        {
+          "id": "btn_vol_down",
+          "title": "Vol -5%",
+          "action_type": "media",
+          "payload": {
+            "key": "volume_down"
+          },
+          "color": "#E17055",
+          "icon": "volume_down"
+        },
+        {
+          "id": "btn_vol_up",
+          "title": "Vol +5%",
+          "action_type": "media",
+          "payload": {
+            "key": "volume_up"
+          },
+          "color": "#00B894",
+          "icon": "volume_up"
+        },
+        {
+          "id": "btn_spotify",
+          "title": "Spotify",
+          "action_type": "app",
+          "payload": {
+            "target": "spotify"
+          },
+          "color": "#1DB954",
+          "icon": "music_note"
+        },
+        {
+          "id": "btn_youtube",
+          "title": "YouTube",
+          "action_type": "url",
+          "payload": {
+            "url": "https://youtube.com"
+          },
+          "color": "#FF0000",
+          "icon": "smart_display"
+        },
+        {
+          "id": "btn_soundcloud",
+          "title": "SoundCloud",
+          "action_type": "url",
+          "payload": {
+            "url": "https://soundcloud.com"
+          },
+          "color": "#FF5500",
+          "icon": "cloud"
+        }
+      ]
+    },
+    {
+      "id": "system_tools",
+      "name": "System & Tools",
+      "columns": 3,
+      "rows": 3,
+      "buttons": [
+        {
+          "id": "btn_snip",
+          "title": "Snip Tool",
+          "action_type": "system",
+          "payload": {
+            "command": "screenshot"
+          },
+          "color": "#FD79A8",
+          "icon": "crop"
+        },
+        {
+          "id": "btn_desktop",
+          "title": "Desktop",
+          "action_type": "system",
+          "payload": {
+            "command": "show_desktop"
+          },
+          "color": "#A29BFE",
+          "icon": "desktop_windows"
+        },
+        {
+          "id": "btn_taskmgr",
+          "title": "Task Manager",
+          "action_type": "system",
+          "payload": {
+            "command": "task_manager"
+          },
+          "color": "#E84393",
+          "icon": "analytics"
+        },
+        {
+          "id": "btn_lock",
+          "title": "Lock PC",
+          "action_type": "system",
+          "payload": {
+            "command": "lock"
+          },
+          "color": "#D63031",
+          "icon": "lock"
+        },
+        {
+          "id": "btn_term",
+          "title": "Terminal",
+          "action_type": "app",
+          "payload": {
+            "target": "terminal"
+          },
+          "color": "#2D3436",
+          "icon": "terminal"
+        },
+        {
+          "id": "btn_calc",
+          "title": "Calculator",
+          "action_type": "app",
+          "payload": {
+            "target": "calc"
+          },
+          "color": "#FDCB6E",
+          "icon": "calculate"
+        },
+        {
+          "id": "btn_notepad",
+          "title": "Notepad",
+          "action_type": "app",
+          "payload": {
+            "target": "notepad"
+          },
+          "color": "#74B9FF",
+          "icon": "edit_note"
+        },
+        {
+          "id": "btn_alttab",
+          "title": "Alt + Tab",
+          "action_type": "system",
+          "payload": {
+            "command": "alt_tab"
+          },
+          "color": "#6C5CE7",
+          "icon": "swap_horiz"
+        },
+        {
+          "id": "btn_run",
+          "title": "Win + R",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "win",
+              "r"
+            ]
+          },
+          "color": "#00B894",
+          "icon": "play_circle"
+        }
+      ]
+    },
+    {
+      "id": "dev_stream",
+      "name": "Dev & Discord",
+      "columns": 3,
+      "rows": 3,
+      "buttons": [
+        {
+          "id": "btn_vscode",
+          "title": "VS Code",
+          "action_type": "app",
+          "payload": {
+            "target": "vscode"
+          },
+          "color": "#007ACC",
+          "icon": "code"
+        },
+        {
+          "id": "btn_chrome",
+          "title": "Chrome",
+          "action_type": "app",
+          "payload": {
+            "target": "chrome"
+          },
+          "color": "#4285F4",
+          "icon": "language"
+        },
+        {
+          "id": "btn_discord",
+          "title": "Discord",
+          "action_type": "app",
+          "payload": {
+            "target": "discord"
+          },
+          "color": "#5865F2",
+          "icon": "forum"
+        },
+        {
+          "id": "btn_disc_mute",
+          "title": "Mic Mute",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "ctrl",
+              "shift",
+              "m"
+            ]
+          },
+          "color": "#ED4245",
+          "icon": "mic_off"
+        },
+        {
+          "id": "btn_disc_deaf",
+          "title": "Deafen",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "ctrl",
+              "shift",
+              "d"
+            ]
+          },
+          "color": "#FAA61A",
+          "icon": "headset_off"
+        },
+        {
+          "id": "btn_copy",
+          "title": "Copy",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "ctrl",
+              "c"
+            ]
+          },
+          "color": "#55EFC4",
+          "icon": "content_copy"
+        },
+        {
+          "id": "btn_paste",
+          "title": "Paste",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "ctrl",
+              "v"
+            ]
+          },
+          "color": "#81ECEC",
+          "icon": "content_paste"
+        },
+        {
+          "id": "btn_undo",
+          "title": "Undo",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "ctrl",
+              "z"
+            ]
+          },
+          "color": "#FAB1A0",
+          "icon": "undo"
+        },
+        {
+          "id": "btn_selectall",
+          "title": "Select All",
+          "action_type": "hotkey",
+          "payload": {
+            "keys": [
+              "ctrl",
+              "a"
+            ]
+          },
+          "color": "#A29BFE",
+          "icon": "select_all"
+        }
+      ]
+    },
+    {
+      "id": "profile_1789886477405",
+      "name": "Profile 4",
+      "columns": 3,
+      "rows": 3,
+      "buttons": []
+    }
+  ]
+}

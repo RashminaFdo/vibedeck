@@ -1,0 +1,15 @@
+# Android binaries and build artifacts
+*.apk
+*.aab
+
+# Python cache and environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+venv/
+.venv/
+
+# Flutter / Dart
+.dart_tool/
+build/
