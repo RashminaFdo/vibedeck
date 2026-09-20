@@ -28,6 +28,7 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
 
   // Action payloads
   String _mediaKey = 'media_play_pause';
+  String _powerCommand = 'screen_off';
   final List<String> _hotkeyModifiers = [];
   final TextEditingController _hotkeyCharController = TextEditingController();
   final TextEditingController _appTargetController = TextEditingController();
@@ -100,6 +101,8 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
         _systemCommand = b.payload['command'] ?? 'screenshot';
       } else if (_actionType == 'volume') {
         _volumeLevel = b.payload['level'] ?? 50;
+      } else if (_actionType == 'power') {
+        _powerCommand = b.payload['command'] ?? 'screen_off';
       } else if (_actionType == 'type') {
         _typeTextController.text = b.payload['text'] ?? '';
       }
@@ -131,6 +134,12 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
         return {'url': _urlController.text.trim()};
       case 'system':
         return {'command': _systemCommand};
+      case 'power':
+        return {'command': _powerCommand};
+      case 'mic_mute':
+      case 'sys_cpu':
+      case 'sys_ram':
+        return {};
       case 'volume':
         return {'level': _volumeLevel};
       case 'type':
@@ -202,6 +211,31 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
               ),
               const SizedBox(height: 16),
 
+              // Quick Presets Row
+              const Text("Quick Presets", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildPresetQuickChip("Mic Mute", "mic_mute", {}, "mic_off", "#00FF88"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Screen Off", "power", {"command": "screen_off"}, "lock", "#00F2FE"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Sleep PC", "power", {"command": "sleep"}, "lock", "#FF2A6D"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("CPU Stats", "sys_cpu", {}, "analytics", "#00F2FE"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("RAM Stats", "sys_ram", {}, "analytics", "#9D4EDD"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Play/Pause", "media", {"key": "media_play_pause"}, "play_arrow", "#0984E3"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Screenshot", "system", {"command": "screenshot"}, "crop", "#FDCB6E"),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
               // Title input
               TextField(
                 controller: _titleController,
@@ -221,7 +255,11 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
                 runSpacing: 8,
                 children: [
                   _buildTypeChip("media", "Media Key", Icons.play_arrow_rounded),
-                  _buildTypeChip("hotkey", "Hotkey Combo", Icons.keyboard_rounded),
+                  _buildTypeChip("mic_mute", "Mic Mute", Icons.mic_off_rounded),
+                  _buildTypeChip("power", "Power/Sleep", Icons.nightlight_round),
+                  _buildTypeChip("sys_cpu", "CPU Stats", Icons.memory_rounded),
+                  _buildTypeChip("sys_ram", "RAM Stats", Icons.storage_rounded),
+                  _buildTypeChip("hotkey", "Hotkey", Icons.keyboard_rounded),
                   _buildTypeChip("app", "Launch App", Icons.apps_rounded),
                   _buildTypeChip("url", "Open URL", Icons.link_rounded),
                   _buildTypeChip("system", "System", Icons.computer_rounded),
@@ -519,6 +557,62 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
           },
         );
 
+      case 'power':
+        return DropdownButtonFormField<String>(
+          value: _powerCommand,
+          decoration: const InputDecoration(labelText: "Bed Remote Power Command"),
+          items: const [
+            DropdownMenuItem(value: 'screen_off', child: Text("Turn Off Screen (Monitors Standby)")),
+            DropdownMenuItem(value: 'sleep', child: Text("Put PC to Sleep")),
+            DropdownMenuItem(value: 'lock', child: Text("Lock Workstation (Win+L)")),
+          ],
+          onChanged: (val) {
+            if (val != null) setState(() => _powerCommand = val);
+          },
+        );
+
+      case 'mic_mute':
+        return const Row(
+          children: [
+            Icon(Icons.mic_off_rounded, color: Color(0xFFFF2A6D), size: 28),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Toggles microphone mute in Windows & Discord.\nButton glows RED when muted and GREEN when live.",
+                style: TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ),
+          ],
+        );
+
+      case 'sys_cpu':
+        return const Row(
+          children: [
+            Icon(Icons.memory_rounded, color: VibeTheme.cyanNeon, size: 28),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                "Displays real-time PC CPU % on the button with active load color (Cyan -> Amber -> Red).",
+                style: TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ),
+          ],
+        );
+
+      case 'sys_ram':
+        return Row(
+          children: [
+            const Icon(Icons.storage_rounded, color: VibeTheme.purpleNeon, size: 28),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Text(
+                "Displays real-time PC RAM % on the button with active load color (Purple -> Amber -> Red).",
+                style: TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+            ),
+          ],
+        );
+
       case 'volume':
         return Column(
           children: [
@@ -553,6 +647,33 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
       default:
         return const SizedBox.shrink();
     }
+  }
+
+  Widget _buildPresetQuickChip(String label, String type, Map<String, dynamic> payload, String icon, String color) {
+    return ActionChip(
+      avatar: Icon(
+        DeckButton(id: '', title: '', actionType: '', payload: {}, colorHex: color, iconName: icon).iconData,
+        size: 14,
+        color: Colors.white,
+      ),
+      label: Text(label, style: const TextStyle(fontSize: 11)),
+      backgroundColor: const Color(0xFF1F2335),
+      onPressed: () {
+        setState(() {
+          _titleController.text = label;
+          _actionType = type;
+          _iconName = icon;
+          _colorHex = color;
+          if (type == 'power') {
+            _powerCommand = payload['command'] ?? 'screen_off';
+          } else if (type == 'media') {
+            _mediaKey = payload['key'] ?? 'media_play_pause';
+          } else if (type == 'system') {
+            _systemCommand = payload['command'] ?? 'screenshot';
+          }
+        });
+      },
+    );
   }
 
   Widget _buildAppPresetChip(String label, String target, String icon, String color) {

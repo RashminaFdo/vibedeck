@@ -1,9 +1,9 @@
 {
   "profiles": [
     {
-      "id": "media_audio",
-      "name": "Media & Audio",
-      "columns": 3,
+      "id": "stream_deck_15",
+      "name": "Stream Deck 15-Key",
+      "columns": 5,
       "rows": 3,
       "buttons": [
         {
@@ -37,9 +37,9 @@
           "icon": "skip_next"
         },
         {
-          "id": "btn_mute",
+          "id": "btn_mute_master",
           "title": "Mute Master",
-          "action_type": "media",
+          "action_type": "mute",
           "payload": {
             "key": "volume_mute"
           },
@@ -47,24 +47,12 @@
           "icon": "volume_off"
         },
         {
-          "id": "btn_vol_down",
-          "title": "Vol -5%",
-          "action_type": "media",
-          "payload": {
-            "key": "volume_down"
-          },
-          "color": "#E17055",
-          "icon": "volume_down"
-        },
-        {
-          "id": "btn_vol_up",
-          "title": "Vol +5%",
-          "action_type": "media",
-          "payload": {
-            "key": "volume_up"
-          },
-          "color": "#00B894",
-          "icon": "volume_up"
+          "id": "btn_mic_mute",
+          "title": "Mic Mute",
+          "action_type": "mic_mute",
+          "payload": {},
+          "color": "#00FF88",
+          "icon": "mic_off"
         },
         {
           "id": "btn_spotify",
@@ -77,24 +65,90 @@
           "icon": "music_note"
         },
         {
-          "id": "btn_youtube",
-          "title": "YouTube",
-          "action_type": "url",
+          "id": "btn_discord",
+          "title": "Discord",
+          "action_type": "app",
           "payload": {
-            "url": "https://youtube.com"
+            "target": "discord"
           },
-          "color": "#FF0000",
-          "icon": "smart_display"
+          "color": "#5865F2",
+          "icon": "forum"
         },
         {
-          "id": "btn_soundcloud",
-          "title": "SoundCloud",
-          "action_type": "url",
+          "id": "btn_chrome",
+          "title": "Chrome",
+          "action_type": "app",
           "payload": {
-            "url": "https://soundcloud.com"
+            "target": "chrome"
           },
-          "color": "#FF5500",
-          "icon": "cloud"
+          "color": "#4285F4",
+          "icon": "language"
+        },
+        {
+          "id": "btn_vscode",
+          "title": "VS Code",
+          "action_type": "app",
+          "payload": {
+            "target": "code"
+          },
+          "color": "#007ACC",
+          "icon": "code"
+        },
+        {
+          "id": "btn_terminal",
+          "title": "Terminal",
+          "action_type": "app",
+          "payload": {
+            "target": "wt.exe"
+          },
+          "color": "#2D3436",
+          "icon": "terminal"
+        },
+        {
+          "id": "btn_cpu",
+          "title": "CPU Monitor",
+          "action_type": "sys_cpu",
+          "payload": {},
+          "color": "#00F2FE",
+          "icon": "analytics"
+        },
+        {
+          "id": "btn_ram",
+          "title": "RAM Monitor",
+          "action_type": "sys_ram",
+          "payload": {},
+          "color": "#9D4EDD",
+          "icon": "analytics"
+        },
+        {
+          "id": "btn_screenshot",
+          "title": "Snip Tool",
+          "action_type": "system",
+          "payload": {
+            "command": "screenshot"
+          },
+          "color": "#FDCB6E",
+          "icon": "crop"
+        },
+        {
+          "id": "btn_screen_off",
+          "title": "Screen Off",
+          "action_type": "power",
+          "payload": {
+            "command": "screen_off"
+          },
+          "color": "#00F2FE",
+          "icon": "lock"
+        },
+        {
+          "id": "btn_sleep_pc",
+          "title": "Sleep PC",
+          "action_type": "power",
+          "payload": {
+            "command": "sleep"
+          },
+          "color": "#FF2A6D",
+          "icon": "lock"
         }
       ]
     },
@@ -105,33 +159,13 @@
       "rows": 3,
       "buttons": [
         {
-          "id": "btn_snip",
-          "title": "Snip Tool",
-          "action_type": "system",
-          "payload": {
-            "command": "screenshot"
-          },
-          "color": "#FD79A8",
-          "icon": "crop"
-        },
-        {
-          "id": "btn_desktop",
-          "title": "Desktop",
-          "action_type": "system",
-          "payload": {
-            "command": "show_desktop"
-          },
-          "color": "#A29BFE",
-          "icon": "desktop_windows"
-        },
-        {
           "id": "btn_taskmgr",
           "title": "Task Manager",
           "action_type": "system",
           "payload": {
             "command": "task_manager"
           },
-          "color": "#E84393",
+          "color": "#0984E3",
           "icon": "analytics"
         },
         {
@@ -145,34 +179,14 @@
           "icon": "lock"
         },
         {
-          "id": "btn_term",
-          "title": "Terminal",
-          "action_type": "app",
+          "id": "btn_desktop",
+          "title": "Show Desktop",
+          "action_type": "system",
           "payload": {
-            "target": "terminal"
+            "command": "show_desktop"
           },
-          "color": "#2D3436",
-          "icon": "terminal"
-        },
-        {
-          "id": "btn_calc",
-          "title": "Calculator",
-          "action_type": "app",
-          "payload": {
-            "target": "calc"
-          },
-          "color": "#FDCB6E",
-          "icon": "calculate"
-        },
-        {
-          "id": "btn_notepad",
-          "title": "Notepad",
-          "action_type": "app",
-          "payload": {
-            "target": "notepad"
-          },
-          "color": "#74B9FF",
-          "icon": "edit_note"
+          "color": "#6C5CE7",
+          "icon": "desktop_windows"
         },
         {
           "id": "btn_alttab",
@@ -181,99 +195,37 @@
           "payload": {
             "command": "alt_tab"
           },
-          "color": "#6C5CE7",
+          "color": "#FD79A8",
           "icon": "swap_horiz"
         },
         {
-          "id": "btn_run",
-          "title": "Win + R",
-          "action_type": "hotkey",
+          "id": "btn_calc",
+          "title": "Calculator",
+          "action_type": "app",
           "payload": {
-            "keys": [
-              "win",
-              "r"
-            ]
+            "target": "calc.exe"
           },
           "color": "#00B894",
-          "icon": "play_circle"
-        }
-      ]
-    },
-    {
-      "id": "dev_stream",
-      "name": "Dev & Discord",
-      "columns": 3,
-      "rows": 3,
-      "buttons": [
+          "icon": "calculate"
+        },
         {
-          "id": "btn_vscode",
-          "title": "VS Code",
+          "id": "btn_notepad",
+          "title": "Notepad",
           "action_type": "app",
           "payload": {
-            "target": "vscode"
+            "target": "notepad.exe"
           },
-          "color": "#007ACC",
-          "icon": "code"
-        },
-        {
-          "id": "btn_chrome",
-          "title": "Chrome",
-          "action_type": "app",
-          "payload": {
-            "target": "chrome"
-          },
-          "color": "#4285F4",
-          "icon": "language"
-        },
-        {
-          "id": "btn_discord",
-          "title": "Discord",
-          "action_type": "app",
-          "payload": {
-            "target": "discord"
-          },
-          "color": "#5865F2",
-          "icon": "forum"
-        },
-        {
-          "id": "btn_disc_mute",
-          "title": "Mic Mute",
-          "action_type": "hotkey",
-          "payload": {
-            "keys": [
-              "ctrl",
-              "shift",
-              "m"
-            ]
-          },
-          "color": "#ED4245",
-          "icon": "mic_off"
-        },
-        {
-          "id": "btn_disc_deaf",
-          "title": "Deafen",
-          "action_type": "hotkey",
-          "payload": {
-            "keys": [
-              "ctrl",
-              "shift",
-              "d"
-            ]
-          },
-          "color": "#FAA61A",
-          "icon": "headset_off"
+          "color": "#FDCB6E",
+          "icon": "edit_note"
         },
         {
           "id": "btn_copy",
           "title": "Copy",
           "action_type": "hotkey",
           "payload": {
-            "keys": [
-              "ctrl",
-              "c"
-            ]
+            "keys": ["ctrl", "c"]
           },
-          "color": "#55EFC4",
+          "color": "#74B9FF",
           "icon": "content_copy"
         },
         {
@@ -281,12 +233,9 @@
           "title": "Paste",
           "action_type": "hotkey",
           "payload": {
-            "keys": [
-              "ctrl",
-              "v"
-            ]
+            "keys": ["ctrl", "v"]
           },
-          "color": "#81ECEC",
+          "color": "#A29BFE",
           "icon": "content_paste"
         },
         {
@@ -294,35 +243,12 @@
           "title": "Undo",
           "action_type": "hotkey",
           "payload": {
-            "keys": [
-              "ctrl",
-              "z"
-            ]
+            "keys": ["ctrl", "z"]
           },
-          "color": "#FAB1A0",
+          "color": "#E17055",
           "icon": "undo"
-        },
-        {
-          "id": "btn_selectall",
-          "title": "Select All",
-          "action_type": "hotkey",
-          "payload": {
-            "keys": [
-              "ctrl",
-              "a"
-            ]
-          },
-          "color": "#A29BFE",
-          "icon": "select_all"
         }
       ]
-    },
-    {
-      "id": "profile_1789886477405",
-      "name": "Profile 4",
-      "columns": 3,
-      "rows": 3,
-      "buttons": []
     }
   ]
 }

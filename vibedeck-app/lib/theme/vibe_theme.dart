@@ -11,6 +11,8 @@ class VibeTheme {
   static const Color greenNeon = Color(0xFF10B981);   // Emerald
   static const Color pinkNeon = Color(0xFFF43F5E);    // Rose Pink
   static const Color orangeNeon = Color(0xFFF59E0B);  // Amber
+  static const Color purpleNeon = Color(0xFF9D4EDD);  // Purple
+  static const Color blueNeon = Color(0xFF3B82F6);    // Blue
 
   static ThemeData get darkTheme {
     return ThemeData(

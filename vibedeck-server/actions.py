@@ -1,19 +1,21 @@
 """
 VibeDeck Action Dispatcher
-Controls Windows media keys, hotkeys, volume, app launches, and system commands.
+Controls Windows media keys, hotkeys, volume, microphone, trackpad mouse, keyboard typing, system telemetry, and PC power commands.
 """
 
 import sys
 import os
 import time
 import ctypes
+from ctypes import wintypes
 import subprocess
 import logging
+import psutil
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("VibeDeckActions")
 
-# Windows Virtual-Key Codes for Media and System
+# Windows Virtual-Key Codes for Media, System, and PC Keys
 VK_CODES = {
     # Media keys
     "media_play_pause": 0xB3,
@@ -26,22 +28,30 @@ VK_CODES = {
     
     # Modifiers
     "ctrl": 0x11,
+    "control": 0x11,
     "shift": 0x10,
     "alt": 0x12,
     "win": 0x5B,
+    "windows": 0x5B,
     "meta": 0x5B,
     
     # Common keys
     "esc": 0x1B,
+    "escape": 0x1B,
     "tab": 0x09,
     "enter": 0x0D,
+    "return": 0x0D,
     "space": 0x20,
     "backspace": 0x08,
     "delete": 0x2E,
-    "up": 0x26,
+    "up": 0x25,
     "down": 0x28,
     "left": 0x25,
     "right": 0x27,
+    "home": 0x24,
+    "end": 0x23,
+    "pageup": 0x21,
+    "pagedown": 0x22,
     "printscreen": 0x2C,
     
     # F-keys
@@ -60,13 +70,43 @@ for num in "0123456789":
 KEYEVENTF_KEYDOWN = 0x0000
 KEYEVENTF_KEYUP = 0x0002
 KEYEVENTF_EXTENDEDKEY = 0x0001
+KEYEVENTF_UNICODE = 0x0004
+
+# Mouse event flags
+MOUSEEVENTF_MOVE = 0x0001
+MOUSEEVENTF_LEFTDOWN = 0x0002
+MOUSEEVENTF_LEFTUP = 0x0004
+MOUSEEVENTF_RIGHTDOWN = 0x0008
+MOUSEEVENTF_RIGHTUP = 0x0010
+MOUSEEVENTF_MIDDLEDOWN = 0x0020
+MOUSEEVENTF_MIDDLEUP = 0x0040
+MOUSEEVENTF_WHEEL = 0x0800
+
+
+# SendInput structs for high-reliability Unicode text typing
+class KEYBDINPUT(ctypes.Structure):
+    _fields_ = [
+        ('wVk', wintypes.WORD),
+        ('wScan', wintypes.WORD),
+        ('dwFlags', wintypes.DWORD),
+        ('time', wintypes.DWORD),
+        ('dwExtraInfo', ctypes.c_ulonglong)
+    ]
+
+class INPUT(ctypes.Structure):
+    class _INPUT(ctypes.Union):
+        _fields_ = [('ki', KEYBDINPUT)]
+    _anonymous_ = ('_input',)
+    _fields_ = [
+        ('type', wintypes.DWORD),
+        ('_input', _INPUT)
+    ]
 
 
 def _send_key(vk_code: int, keyup: bool = False):
     """Sends a single virtual key event via Windows keybd_event."""
     flags = KEYEVENTF_KEYUP if keyup else KEYEVENTF_KEYDOWN
-    # Extended keys flag for media keys
-    if vk_code in (0xB3, 0xB0, 0xB1, 0xB2, 0xAD, 0xAE, 0xAF, 0x5B):
+    if vk_code in (0xB3, 0xB0, 0xB1, 0xB2, 0xAD, 0xAE, 0xAF, 0x5B, 0x25, 0x26, 0x27, 0x28, 0x2E, 0x2C):
         flags |= KEYEVENTF_EXTENDEDKEY
     ctypes.windll.user32.keybd_event(vk_code, 0, flags, 0)
 
@@ -79,6 +119,19 @@ def press_media_key(action_name: str) -> bool:
         return False
     
     logger.info(f"Pressing media key: {action_name} (VK: 0x{code:X})")
+    _send_key(code, keyup=False)
+    time.sleep(0.02)
+    _send_key(code, keyup=True)
+    return True
+
+
+def press_special_key(key_name: str) -> bool:
+    """Presses a single key (e.g. 'enter', 'esc', 'space', 'tab')."""
+    clean_k = key_name.lower().strip()
+    code = VK_CODES.get(clean_k)
+    if code is None:
+        logger.warning(f"Unknown special key: {key_name}")
+        return False
     _send_key(code, keyup=False)
     time.sleep(0.02)
     _send_key(code, keyup=True)
@@ -100,19 +153,83 @@ def execute_hotkey(keys: list[str]) -> bool:
         return False
     
     logger.info(f"Executing hotkey: {keys}")
-    # Press all down in order
     for code in vk_list:
         _send_key(code, keyup=False)
         time.sleep(0.01)
         
     time.sleep(0.03)
     
-    # Release in reverse order
     for code in reversed(vk_list):
         _send_key(code, keyup=True)
         time.sleep(0.01)
         
     return True
+
+
+def type_text(text: str) -> bool:
+    """Types arbitrary Unicode text into active Windows focus without third-party dependencies."""
+    try:
+        user32 = ctypes.windll.user32
+        for char in text:
+            # Send Unicode key down and up
+            code = ord(char)
+            inp_down = INPUT(type=1, ki=KEYBDINPUT(wVk=0, wScan=code, dwFlags=KEYEVENTF_UNICODE, time=0, dwExtraInfo=0))
+            inp_up = INPUT(type=1, ki=KEYBDINPUT(wVk=0, wScan=code, dwFlags=KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, time=0, dwExtraInfo=0))
+            user32.SendInput(1, ctypes.byref(inp_down), ctypes.sizeof(INPUT))
+            time.sleep(0.005)
+            user32.SendInput(1, ctypes.byref(inp_up), ctypes.sizeof(INPUT))
+            time.sleep(0.005)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to type text: {e}")
+        return False
+
+
+# Trackpad & Mouse simulation
+def mouse_move(dx: float, dy: float) -> bool:
+    """Relative cursor delta movement."""
+    try:
+        ctypes.windll.user32.mouse_event(MOUSEEVENTF_MOVE, int(dx), int(dy), 0, 0)
+        return True
+    except Exception as e:
+        logger.error(f"mouse_move failed: {e}")
+        return False
+
+
+def mouse_click(button: str = "left", double: bool = False) -> bool:
+    """Triggers mouse button click (left, right, middle)."""
+    btn = button.lower().strip()
+    try:
+        user32 = ctypes.windll.user32
+        if btn == "left":
+            user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+            if double:
+                time.sleep(0.05)
+                user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+        elif btn == "right":
+            user32.mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+            user32.mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
+        elif btn == "middle":
+            user32.mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, 0)
+            user32.mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, 0)
+        return True
+    except Exception as e:
+        logger.error(f"mouse_click failed: {e}")
+        return False
+
+
+def mouse_scroll(dy: float) -> bool:
+    """Scrolls vertical mouse wheel."""
+    try:
+        # Wheel delta is standard 120 per notch
+        wheel_amount = int(dy * 120)
+        ctypes.windll.user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheel_amount, 0)
+        return True
+    except Exception as e:
+        logger.error(f"mouse_scroll failed: {e}")
+        return False
 
 
 def launch_application(app_target: str) -> bool:
@@ -176,7 +293,6 @@ def get_installed_apps() -> list[dict]:
     seen_names = set()
     apps = []
     
-    # Common system apps to include
     common_defaults = [
         {"name": "Spotify", "target": "spotify"},
         {"name": "Discord", "target": "discord"},
@@ -199,8 +315,6 @@ def get_installed_apps() -> list[dict]:
         for lnk in glob.glob(os.path.join(base_dir, "**", "*.lnk"), recursive=True):
             base_name = os.path.splitext(os.path.basename(lnk))[0]
             clean_name = base_name.strip()
-            
-            # Skip uninstallers and helpers
             lower_name = clean_name.lower()
             if any(skip in lower_name for skip in ["uninstall", "remove", "help", "readme", "documentation", "license"]):
                 continue
@@ -213,7 +327,6 @@ def get_installed_apps() -> list[dict]:
                 "target": lnk
             })
             
-    # Sort alphabetically by name
     apps.sort(key=lambda x: x["name"].lower())
     return apps
 
@@ -236,20 +349,21 @@ def execute_system_command(command: str) -> bool:
     cmd = command.lower().strip()
     logger.info(f"Executing system command: {cmd}")
     try:
-        if cmd == "lock":
+        if cmd in ("lock", "lock_pc"):
             ctypes.windll.user32.LockWorkStation()
             return True
         elif cmd == "screenshot":
-            # Win + Shift + S
             return execute_hotkey(["win", "shift", "s"])
         elif cmd == "show_desktop":
-            # Win + D
             return execute_hotkey(["win", "d"])
         elif cmd == "task_manager":
-            # Ctrl + Shift + Esc
             return execute_hotkey(["ctrl", "shift", "esc"])
         elif cmd == "alt_tab":
             return execute_hotkey(["alt", "tab"])
+        elif cmd == "screen_off":
+            return turn_off_screen()
+        elif cmd == "sleep":
+            return sleep_pc()
         else:
             logger.warning(f"Unknown system command: {cmd}")
             return False
@@ -258,8 +372,9 @@ def execute_system_command(command: str) -> bool:
         return False
 
 
-def _get_endpoint_volume():
-    """Helper to get IAudioEndpointVolume across different pycaw versions."""
+# Core Audio Volume & Microphone Controls
+def _get_speaker_volume_endpoint():
+    """Helper to get speaker IAudioEndpointVolume."""
     from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
     devices = AudioUtilities.GetSpeakers()
     if hasattr(devices, 'EndpointVolume'):
@@ -270,10 +385,28 @@ def _get_endpoint_volume():
         return ctypes.cast(interface, ctypes.POINTER(IAudioEndpointVolume))
 
 
-def get_master_volume() -> dict:
-    """Gets the master volume and mute status using pycaw if available, else fallback."""
+def _get_mic_volume_endpoint():
+    """Helper to get microphone IAudioEndpointVolume."""
     try:
-        vol = _get_endpoint_volume()
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+        mic = AudioUtilities.GetMicrophone()
+        if mic is None:
+            return None
+        if hasattr(mic, 'EndpointVolume'):
+            return mic.EndpointVolume
+        else:
+            from comtypes import CLSCTX_ALL
+            interface = mic.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+            return interface.QueryInterface(IAudioEndpointVolume)
+    except Exception as e:
+        logger.debug(f"Could not access microphone endpoint: {e}")
+        return None
+
+
+def get_master_volume() -> dict:
+    """Gets the master speaker volume and mute status."""
+    try:
+        vol = _get_speaker_volume_endpoint()
         current_vol = round(vol.GetMasterVolumeLevelScalar() * 100)
         is_muted = bool(vol.GetMute())
         return {"volume": current_vol, "muted": is_muted}
@@ -283,25 +416,98 @@ def get_master_volume() -> dict:
 
 
 def set_master_volume(level_pct: int) -> bool:
-    """Sets master volume percentage (0-100)."""
+    """Sets master speaker volume percentage (0-100)."""
     try:
-        vol = _get_endpoint_volume()
+        vol = _get_speaker_volume_endpoint()
         clamped = max(0, min(100, level_pct)) / 100.0
         vol.SetMasterVolumeLevelScalar(clamped, None)
         return True
     except Exception as e:
         logger.error(f"Failed to set volume: {e}")
         return False
-        logger.error(f"Failed to set volume: {e}")
+
+
+def toggle_master_mute() -> bool:
+    """Toggles speaker master mute and returns new mute state."""
+    try:
+        vol = _get_speaker_volume_endpoint()
+        new_state = not bool(vol.GetMute())
+        vol.SetMute(new_state, None)
+        return new_state
+    except Exception as e:
+        logger.error(f"Failed to toggle mute: {e}")
+        press_media_key("volume_mute")
         return False
 
 
-def type_text(text: str) -> bool:
-    """Types out arbitrary text."""
+def get_mic_mute() -> bool:
+    """Checks if default microphone is currently muted."""
     try:
-        import pyautogui
-        pyautogui.write(text, interval=0.01)
+        endpoint = _get_mic_volume_endpoint()
+        if endpoint:
+            return bool(endpoint.GetMute())
+    except Exception as e:
+        logger.debug(f"Failed to get mic mute state: {e}")
+    return False
+
+
+def toggle_mic_mute() -> bool:
+    """Toggles microphone mute state at Windows Core Audio level (also mutes Discord mic input)."""
+    try:
+        endpoint = _get_mic_volume_endpoint()
+        if endpoint:
+            new_mute = not bool(endpoint.GetMute())
+            endpoint.SetMute(new_mute, None)
+            logger.info(f"Microphone mute toggled. New state: {new_mute}")
+            return new_mute
+    except Exception as e:
+        logger.error(f"Failed to toggle mic mute: {e}")
+        
+    # Fallback to common Discord mute hotkey (Ctrl + Shift + M)
+    execute_hotkey(["ctrl", "shift", "m"])
+    return False
+
+
+def get_system_telemetry() -> dict:
+    """Returns live PC telemetry (CPU %, RAM %, audio states)."""
+    try:
+        cpu = int(psutil.cpu_percent(interval=None))
+        ram = int(psutil.virtual_memory().percent)
+    except Exception:
+        cpu = 0
+        ram = 0
+
+    audio = get_master_volume()
+    mic_muted = get_mic_mute()
+
+    return {
+        "cpu": cpu,
+        "ram": ram,
+        "volume": audio["volume"],
+        "is_muted": audio["muted"],
+        "is_mic_muted": mic_muted,
+    }
+
+
+def turn_off_screen() -> bool:
+    """Puts monitors to sleep immediately without sleeping the PC."""
+    logger.info("Turning off PC monitors (low-power standby)...")
+    try:
+        # WM_SYSCOMMAND = 0x0112, SC_MONITORPOWER = 0xF170, 2 = Off
+        HWND_BROADCAST = 0xFFFF
+        ctypes.windll.user32.SendMessageW(HWND_BROADCAST, 0x0112, 0xF170, 2)
         return True
     except Exception as e:
-        logger.error(f"Failed to type text: {e}")
+        logger.error(f"Failed to turn off screen: {e}")
+        return False
+
+
+def sleep_pc() -> bool:
+    """Puts PC into sleep mode."""
+    logger.info("Putting PC to sleep...")
+    try:
+        subprocess.Popen("rundll32.exe powrprof.dll,SetSuspendState 0,1,0", shell=True)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to sleep PC: {e}")
         return False

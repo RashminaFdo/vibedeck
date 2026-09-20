@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
 import '../models/deck_action.dart';
 
 enum VibeConnectionState { disconnected, discovering, connecting, connected }
@@ -20,6 +19,9 @@ class ConnectionService extends ChangeNotifier {
   int latencyMs = 0;
   int masterVolume = 50;
   bool isMuted = false;
+  bool isMicMuted = false;
+  int cpuPercent = 0;
+  int ramPercent = 0;
   String? lastError;
   List<Map<String, String>> installedApps = [];
 
@@ -35,7 +37,6 @@ class ConnectionService extends ChangeNotifier {
     _shouldAutoReconnect = true;
     _lastConnectedUrl = url;
     
-    // Clean up previous connection
     _disconnectInternal(silent: true);
 
     state = VibeConnectionState.connecting;
@@ -52,7 +53,6 @@ class ConnectionService extends ChangeNotifier {
       currentHost = uri.host;
       _channel = WebSocketChannel.connect(uri);
 
-      // Listen to incoming messages
       _channel!.stream.listen(
         (data) {
           _handleMessage(data.toString());
@@ -81,7 +81,6 @@ class ConnectionService extends ChangeNotifier {
   }
 
   void connectUsb() {
-    // Standard ADB reverse forwarded endpoint
     connect("ws://127.0.0.1:8765");
   }
 
@@ -99,23 +98,23 @@ class ConnectionService extends ChangeNotifier {
         if (state == VibeConnectionState.discovering) {
           _udpSocket?.close();
           state = VibeConnectionState.disconnected;
-          lastError = "No VibeDeck host found on Wi-Fi. Try QR scan or manual IP.";
+          lastError = "Host laptop not found. Ensure both are on the same Wi-Fi.";
           notifyListeners();
         }
       });
 
       _udpSocket!.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {
-          Datagram? dg = _udpSocket?.receive();
-          if (dg != null) {
+          final datagram = _udpSocket?.receive();
+          if (datagram != null) {
+            final text = utf8.decode(datagram.data);
             try {
-              final message = utf8.decode(dg.data);
-              final json = jsonDecode(message);
-              if (json['service'] == 'vibedeck') {
-                final ip = json['ip'] ?? dg.address.address;
+              final json = jsonDecode(text) as Map<String, dynamic>;
+              if (json['type'] == 'VIBEDECK_DISCOVERY') {
+                final host = datagram.address.address;
                 final port = json['port'] ?? 8765;
                 _udpSocket?.close();
-                connect("ws://$ip:$port");
+                connect("ws://$host:$port");
               }
             } catch (_) {}
           }
@@ -123,14 +122,14 @@ class ConnectionService extends ChangeNotifier {
       });
     } catch (e) {
       state = VibeConnectionState.disconnected;
-      lastError = "Auto-discovery error: $e";
+      lastError = "UDP discovery failed: $e";
       notifyListeners();
     }
   }
 
   void disconnect() {
     _shouldAutoReconnect = false;
-    _disconnectInternal();
+    _disconnectInternal(silent: false);
   }
 
   void _disconnectInternal({bool silent = false}) {
@@ -139,7 +138,7 @@ class ConnectionService extends ChangeNotifier {
     _udpSocket?.close();
     _udpSocket = null;
     try {
-      _channel?.sink.close(status.goingAway);
+      _channel?.sink.close();
     } catch (_) {}
     _channel = null;
 
@@ -156,10 +155,10 @@ class ConnectionService extends ChangeNotifier {
     lastError = reason;
     notifyListeners();
 
-    // Auto-reconnect after 3 seconds if not intentionally disconnected
     if (_shouldAutoReconnect && _lastConnectedUrl != null) {
       Timer(const Duration(seconds: 3), () {
         if (state == VibeConnectionState.disconnected && _shouldAutoReconnect) {
+          debugPrint("Attempting auto-reconnect to $_lastConnectedUrl...");
           connect(_lastConnectedUrl!);
         }
       });
@@ -181,9 +180,8 @@ class ConnectionService extends ChangeNotifier {
   void sendAction(DeckButton button) {
     if (state != VibeConnectionState.connected) return;
 
-    // Haptic feedback
     try {
-      HapticFeedback.heavyImpact();
+      HapticFeedback.lightImpact();
     } catch (_) {}
 
     _sendJson({
@@ -207,8 +205,72 @@ class ConnectionService extends ChangeNotifier {
   void toggleMute() {
     _sendJson({
       "type": "ACTION",
-      "action_kind": "media",
-      "payload": {"key": "volume_mute"}
+      "action_kind": "mute",
+      "payload": {}
+    });
+  }
+
+  void toggleMicMute() {
+    _sendJson({
+      "type": "MIC_MUTE",
+      "payload": {}
+    });
+  }
+
+  // Trackpad / Bed Remote commands
+  void sendTrackpadMove(double dx, double dy) {
+    if (state != VibeConnectionState.connected) return;
+    _sendJson({
+      "type": "TRACKPAD_MOVE",
+      "dx": dx,
+      "dy": dy,
+    });
+  }
+
+  void sendMouseClick(String button, {bool doubleClick = false}) {
+    if (state != VibeConnectionState.connected) return;
+    try {
+      HapticFeedback.selectionClick();
+    } catch (_) {}
+    _sendJson({
+      "type": "MOUSE_CLICK",
+      "button": button,
+      "double": doubleClick,
+    });
+  }
+
+  void sendMouseScroll(double dy) {
+    if (state != VibeConnectionState.connected) return;
+    _sendJson({
+      "type": "MOUSE_SCROLL",
+      "dy": dy,
+    });
+  }
+
+  void sendKeyType(String text) {
+    if (state != VibeConnectionState.connected || text.isEmpty) return;
+    _sendJson({
+      "type": "KEY_TYPE",
+      "text": text,
+    });
+  }
+
+  void sendKeyPress(String key) {
+    if (state != VibeConnectionState.connected) return;
+    try {
+      HapticFeedback.lightImpact();
+    } catch (_) {}
+    _sendJson({
+      "type": "KEY_PRESS",
+      "key": key,
+    });
+  }
+
+  void sendPowerAction(String action) {
+    if (state != VibeConnectionState.connected) return;
+    _sendJson({
+      "type": "POWER_ACTION",
+      "action": action,
     });
   }
 
@@ -242,12 +304,12 @@ class ConnectionService extends ChangeNotifier {
 
       if (type == 'HELLO_ACK') {
         currentServerName = data['hostname'] ?? 'Windows Laptop';
-        if (data.containsKey('volume')) {
-          masterVolume = (data['volume'] as num).toInt();
-        }
-        if (data.containsKey('muted')) {
-          isMuted = data['muted'] as bool;
-        }
+        if (data.containsKey('volume')) masterVolume = (data['volume'] as num).toInt();
+        if (data.containsKey('muted')) isMuted = data['muted'] as bool;
+        if (data.containsKey('is_mic_muted')) isMicMuted = data['is_mic_muted'] as bool;
+        if (data.containsKey('cpu')) cpuPercent = (data['cpu'] as num).toInt();
+        if (data.containsKey('ram')) ramPercent = (data['ram'] as num).toInt();
+        
         if (data.containsKey('profiles') && onProfilesReceived != null) {
           final list = (data['profiles'] as List<dynamic>)
               .map((p) => DeckProfile.fromJson(Map<String, dynamic>.from(p)))
@@ -262,6 +324,14 @@ class ConnectionService extends ChangeNotifier {
           }).toList();
         }
         notifyListeners();
+      } else if (type == 'TELEMETRY' || type == 'STATE_UPDATE') {
+        if (data.containsKey('volume')) masterVolume = (data['volume'] as num).toInt();
+        if (data.containsKey('is_muted')) isMuted = data['is_muted'] as bool;
+        if (data.containsKey('muted')) isMuted = data['muted'] as bool;
+        if (data.containsKey('is_mic_muted')) isMicMuted = data['is_mic_muted'] as bool;
+        if (data.containsKey('cpu')) cpuPercent = (data['cpu'] as num).toInt();
+        if (data.containsKey('ram')) ramPercent = (data['ram'] as num).toInt();
+        notifyListeners();
       } else if (type == 'PONG') {
         final sendTime = data['time'] as num?;
         if (sendTime != null) {
@@ -270,12 +340,11 @@ class ConnectionService extends ChangeNotifier {
           notifyListeners();
         }
       } else if (type == 'ACTION_ACK') {
-        if (data.containsKey('volume')) {
-          masterVolume = (data['volume'] as num).toInt();
-        }
-        if (data.containsKey('muted')) {
-          isMuted = data['muted'] as bool;
-        }
+        if (data.containsKey('volume')) masterVolume = (data['volume'] as num).toInt();
+        if (data.containsKey('muted')) isMuted = data['muted'] as bool;
+        if (data.containsKey('is_mic_muted')) isMicMuted = data['is_mic_muted'] as bool;
+        if (data.containsKey('cpu')) cpuPercent = (data['cpu'] as num).toInt();
+        if (data.containsKey('ram')) ramPercent = (data['ram'] as num).toInt();
         notifyListeners();
       } else if (type == 'PROFILES_DATA') {
         if (data.containsKey('profiles') && onProfilesReceived != null) {

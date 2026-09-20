@@ -1,48 +1,59 @@
 """
-VibeDeck Server - Windows Host Companion
-Accepts WebSocket connections from VibeDeck Android app to execute system/media actions.
+VibeDeck Host Server (v2.0)
+Async WebSocket Server with native Windows integration:
+- System media & hotkeys
+- Core Audio speaker and microphone mute states
+- Low-latency mouse trackpad and keyboard typing
+- Live PC telemetry (CPU %, RAM %, volume)
+- Screen-off, sleep, and system power commands
+- UDP Auto-discovery beacon (port 8766)
 """
 
 import asyncio
 import json
 import logging
 import os
-import sys
 import socket
-from pathlib import Path
+import sys
+import threading
+import time
 import websockets
 
-if sys.platform == "win32":
-    try:
-        sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
-
 import actions
-from discovery import DiscoveryBeacon, get_local_ip
+from discovery import DiscoveryBeacon
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%H:%M:%S"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("VibeDeckServer")
 
 WS_HOST = "0.0.0.0"
 WS_PORT = 8765
-PROFILES_FILE = Path(__file__).parent / "profiles.json"
+PROFILES_FILE = os.path.join(os.path.dirname(__file__), "profiles.json")
 
-# Connected client sockets
 connected_clients = set()
+_server_instance = None
+_telemetry_running = True
+
+
+def get_local_ip() -> str:
+    """Returns local LAN IP address."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    except Exception:
+        ip = "127.0.0.1"
+    finally:
+        s.close()
+    return ip
 
 
 def load_profiles() -> dict:
-    if PROFILES_FILE.exists():
+    if os.path.exists(PROFILES_FILE):
         try:
             with open(PROFILES_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception as e:
-            logger.error(f"Error loading profiles: {e}")
+            logger.error(f"Failed to load profiles.json: {e}")
     return {"profiles": []}
 
 
@@ -52,7 +63,7 @@ def save_profiles(data: dict) -> bool:
             json.dump(data, f, indent=2)
         return True
     except Exception as e:
-        logger.error(f"Error saving profiles: {e}")
+        logger.error(f"Failed to save profiles.json: {e}")
         return False
 
 
@@ -67,7 +78,6 @@ def print_banner(local_ip: str):
     print(f"  Full WS URL   : ws://{local_ip}:{WS_PORT}")
     print("=" * 60)
     
-    # Try printing QR code in terminal safely
     try:
         import qrcode
         qr = qrcode.QRCode(border=1)
@@ -97,6 +107,39 @@ def free_port(port: int = WS_PORT):
         logger.debug(f"free_port check: {e}")
 
 
+async def broadcast_state(data: dict):
+    """Broadcasts a message to all connected mobile clients."""
+    if not connected_clients:
+        return
+    payload = json.dumps(data)
+    dead_clients = []
+    for client in list(connected_clients):
+        try:
+            await client.send(payload)
+        except Exception:
+            dead_clients.append(client)
+    for dc in dead_clients:
+        connected_clients.discard(dc)
+
+
+async def telemetry_loop():
+    """Periodically broadcasts PC telemetry (CPU, RAM, Audio states) every 2 seconds."""
+    global _telemetry_running
+    while _telemetry_running:
+        try:
+            await asyncio.sleep(2.0)
+            if connected_clients:
+                stats = actions.get_system_telemetry()
+                await broadcast_state({
+                    "type": "TELEMETRY",
+                    **stats
+                })
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            logger.debug(f"Telemetry loop exception: {e}")
+
+
 async def handle_message(websocket, message_str: str):
     try:
         msg = json.loads(message_str)
@@ -109,15 +152,18 @@ async def handle_message(websocket, message_str: str):
     if msg_type == "HELLO":
         client_name = msg.get("client_name", "Unknown Android")
         logger.info(f"Handshake from client: {client_name}")
-        vol_info = actions.get_master_volume()
+        telemetry = actions.get_system_telemetry()
         profiles_data = load_profiles()
         installed_apps = actions.get_installed_apps()
         response = {
             "type": "HELLO_ACK",
             "server": "VibeDeck Host",
             "hostname": socket.gethostname(),
-            "volume": vol_info.get("volume", 50),
-            "muted": vol_info.get("muted", False),
+            "volume": telemetry.get("volume", 50),
+            "muted": telemetry.get("is_muted", False),
+            "is_mic_muted": telemetry.get("is_mic_muted", False),
+            "cpu": telemetry.get("cpu", 0),
+            "ram": telemetry.get("ram", 0),
             "profiles": profiles_data.get("profiles", []),
             "apps": installed_apps
         }
@@ -129,6 +175,53 @@ async def handle_message(websocket, message_str: str):
             "type": "APPS_DATA",
             "apps": installed_apps
         }))
+
+    elif msg_type == "TRACKPAD_MOVE":
+        dx = float(msg.get("dx", 0))
+        dy = float(msg.get("dy", 0))
+        actions.mouse_move(dx, dy)
+
+    elif msg_type == "MOUSE_CLICK":
+        button = str(msg.get("button", "left"))
+        double = bool(msg.get("double", False))
+        actions.mouse_click(button=button, double=double)
+
+    elif msg_type == "MOUSE_SCROLL":
+        dy = float(msg.get("dy", 0))
+        actions.mouse_scroll(dy)
+
+    elif msg_type == "KEY_TYPE":
+        text = str(msg.get("text", ""))
+        actions.type_text(text)
+
+    elif msg_type == "KEY_PRESS":
+        key = str(msg.get("key", ""))
+        actions.press_special_key(key)
+
+    elif msg_type == "MIC_MUTE":
+        new_state = actions.toggle_mic_mute()
+        await broadcast_state({
+            "type": "STATE_UPDATE",
+            "is_mic_muted": new_state
+        })
+
+    elif msg_type == "MUTE":
+        new_state = actions.toggle_master_mute()
+        vol_info = actions.get_master_volume()
+        await broadcast_state({
+            "type": "STATE_UPDATE",
+            "volume": vol_info.get("volume", 50),
+            "muted": new_state
+        })
+
+    elif msg_type == "POWER_ACTION":
+        action = str(msg.get("action", "")).lower()
+        if action == "screen_off":
+            actions.turn_off_screen()
+        elif action == "sleep":
+            actions.sleep_pc()
+        elif action == "lock":
+            actions.execute_system_command("lock")
 
     elif msg_type == "ACTION":
         action_id = msg.get("action_id", "")
@@ -149,19 +242,37 @@ async def handle_message(websocket, message_str: str):
             success = actions.execute_system_command(payload.get("command", ""))
         elif action_kind == "volume":
             success = actions.set_master_volume(int(payload.get("level", 50)))
+        elif action_kind == "mute":
+            actions.toggle_master_mute()
+            success = True
+        elif action_kind == "mic_mute":
+            actions.toggle_mic_mute()
+            success = True
+        elif action_kind == "power":
+            cmd = payload.get("command", "screen_off")
+            if cmd == "screen_off":
+                actions.turn_off_screen()
+            elif cmd == "sleep":
+                actions.sleep_pc()
+            elif cmd == "lock":
+                actions.execute_system_command("lock")
+            success = True
         elif action_kind == "type":
             success = actions.type_text(payload.get("text", ""))
         else:
             logger.warning(f"Unknown action kind: {action_kind}")
 
-        # Send fast ACK
-        vol_info = actions.get_master_volume()
+        # Send fast ACK with current states
+        telemetry = actions.get_system_telemetry()
         ack = {
             "type": "ACTION_ACK",
             "action_id": action_id,
             "status": "success" if success else "failed",
-            "volume": vol_info.get("volume", 50),
-            "muted": vol_info.get("muted", False)
+            "volume": telemetry.get("volume", 50),
+            "muted": telemetry.get("is_muted", False),
+            "is_mic_muted": telemetry.get("is_mic_muted", False),
+            "cpu": telemetry.get("cpu", 0),
+            "ram": telemetry.get("ram", 0),
         }
         await websocket.send(json.dumps(ack))
 
@@ -198,15 +309,18 @@ async def client_handler(websocket):
 
 
 async def main():
+    global _telemetry_running
     local_ip = get_local_ip()
     beacon = DiscoveryBeacon(ws_port=WS_PORT)
     beacon.start()
     
     print_banner(local_ip)
 
-    # Ensure port 8765 is not held by a previous zombie instance
+    # Free port 8765 if lingering
     free_port(WS_PORT)
     await asyncio.sleep(0.3)
+
+    telemetry_task = asyncio.create_task(telemetry_loop())
 
     try:
         async with websockets.serve(client_handler, WS_HOST, WS_PORT):
@@ -214,6 +328,8 @@ async def main():
     except (KeyboardInterrupt, asyncio.CancelledError):
         pass
     finally:
+        _telemetry_running = False
+        telemetry_task.cancel()
         beacon.stop()
         logger.info("Server terminated.")
 
