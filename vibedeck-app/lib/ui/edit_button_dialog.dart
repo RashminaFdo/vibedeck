@@ -177,42 +177,56 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 20),
-      child: Container(
-        width: 480,
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
-        ),
-        padding: const EdgeInsets.all(18),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    widget.initialButton == null ? "Create Button" : "Edit Button",
-                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-                  ),
-                  if (widget.onDelete != null)
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
-                      tooltip: "Delete Button",
-                      onPressed: () {
-                        widget.onDelete!();
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
 
-              // Quick Presets Row
-              const Text("Quick Presets", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
+    return Dialog(
+      backgroundColor: const Color(0xFF131622),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isLandscape ? 20 : 14,
+        vertical: isLandscape ? 10 : 18,
+      ),
+      child: Container(
+        width: isLandscape ? 640 : 480,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.94,
+        ),
+        padding: EdgeInsets.all(isLandscape ? 14 : 18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  widget.initialButton == null ? "Create Button" : "Edit Button",
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                if (widget.onDelete != null)
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                    tooltip: "Delete Button",
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    onPressed: () {
+                      widget.onDelete!();
+                      Navigator.of(context).pop();
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Scrollable Settings Body
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Quick Presets Row
+                    const Text("Quick Presets", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 6),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -367,9 +381,13 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
                   },
                 ),
               ),
-              const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
 
-              // Actions
+              // Sticky Bottom Actions
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -382,18 +400,18 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: VibeTheme.primaryNeon,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     onPressed: _save,
-                    child: const Text("Save Button"),
+                    child: const Text("Save Button", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildTypeChip(String type, String label, IconData icon) {

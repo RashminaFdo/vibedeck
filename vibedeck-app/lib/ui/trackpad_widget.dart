@@ -178,9 +178,9 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
           ),
         ),
 
-        // Bottom Left & Right Click Pads
+        // Mouse Buttons (Left, Middle, Right Click)
         Padding(
-          padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+          padding: EdgeInsets.fromLTRB(10, 0, 10, MediaQuery.of(context).orientation == Orientation.landscape ? 4 : 8),
           child: Row(
             children: [
               // Left Click Pad
@@ -195,9 +195,9 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                   onTapCancel: () => setState(() => _isClickPressed = false),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 70),
-                    height: 52,
+                    height: MediaQuery.of(context).orientation == Orientation.landscape ? 40 : 50,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       gradient: LinearGradient(
                         colors: _isClickPressed
                             ? [VibeTheme.cyanNeon.withOpacity(0.5), VibeTheme.cyanNeon.withOpacity(0.3)]
@@ -212,9 +212,9 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.crop_square_rounded, size: 16, color: Colors.white70),
+                          Icon(Icons.crop_square_rounded, size: 15, color: Colors.white70),
                           SizedBox(width: 6),
-                          Text("LEFT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text("LEFT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5)),
                         ],
                       ),
                     ),
@@ -228,15 +228,15 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
               GestureDetector(
                 onTap: () => _conn.sendMouseClick('middle'),
                 child: Container(
-                  height: 52,
-                  width: 54,
+                  height: MediaQuery.of(context).orientation == Orientation.landscape ? 40 : 50,
+                  width: MediaQuery.of(context).orientation == Orientation.landscape ? 44 : 54,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     color: const Color(0xFF181A26),
                     border: Border.all(color: Colors.white12, width: 1),
                   ),
                   child: const Center(
-                    child: Icon(Icons.circle_outlined, size: 18, color: Colors.white60),
+                    child: Icon(Icons.circle_outlined, size: 16, color: Colors.white60),
                   ),
                 ),
               ),
@@ -255,9 +255,9 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                   onTapCancel: () => setState(() => _isRightClickPressed = false),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 70),
-                    height: 52,
+                    height: MediaQuery.of(context).orientation == Orientation.landscape ? 40 : 50,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(10),
                       gradient: LinearGradient(
                         colors: _isRightClickPressed
                             ? [VibeTheme.purpleNeon.withOpacity(0.5), VibeTheme.purpleNeon.withOpacity(0.3)]
@@ -272,9 +272,9 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.crop_portrait_rounded, size: 16, color: Colors.white70),
+                          Icon(Icons.crop_portrait_rounded, size: 15, color: Colors.white70),
                           SizedBox(width: 6),
-                          Text("RIGHT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text("RIGHT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5)),
                         ],
                       ),
                     ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../models/deck_action.dart';
 import '../services/connection_service.dart';
@@ -9,6 +10,7 @@ import 'connect_dialog.dart';
 import 'edit_button_dialog.dart';
 import 'trackpad_widget.dart';
 import 'keyboard_remote_widget.dart';
+import 'vibe_cyber_loader.dart';
 
 class DeckScreen extends StatefulWidget {
   const DeckScreen({super.key});
@@ -167,87 +169,89 @@ class _DeckScreenState extends State<DeckScreen> {
         builder: (ctx, setDState) => AlertDialog(
           backgroundColor: const Color(0xFF161824),
           title: const Text("Stream Deck Grid Presets", style: TextStyle(color: VibeTheme.cyanNeon)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Quick hardware presets
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  ActionChip(
-                    backgroundColor: (cols == 5 && rows == 3) ? VibeTheme.cyanNeon.withOpacity(0.3) : const Color(0xFF222638),
-                    label: const Text("15 Keys (5x3) Standard", style: TextStyle(fontSize: 11, color: Colors.white)),
-                    onPressed: () {
-                      setDState(() {
-                        cols = 5;
-                        rows = 3;
-                      });
-                    },
-                  ),
-                  ActionChip(
-                    backgroundColor: (cols == 8 && rows == 4) ? VibeTheme.purpleNeon.withOpacity(0.3) : const Color(0xFF222638),
-                    label: const Text("32 Keys (8x4) XL", style: TextStyle(fontSize: 11, color: Colors.white)),
-                    onPressed: () {
-                      setDState(() {
-                        cols = 8;
-                        rows = 4;
-                      });
-                    },
-                  ),
-                  ActionChip(
-                    backgroundColor: (cols == 3 && rows == 2) ? Colors.amberAccent.withOpacity(0.3) : const Color(0xFF222638),
-                    label: const Text("6 Keys (3x2) Mini", style: TextStyle(fontSize: 11, color: Colors.white)),
-                    onPressed: () {
-                      setDState(() {
-                        cols = 3;
-                        rows = 2;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              const Divider(height: 24, color: Colors.white12),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Quick hardware presets
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ActionChip(
+                      backgroundColor: (cols == 5 && rows == 3) ? VibeTheme.cyanNeon.withOpacity(0.3) : const Color(0xFF222638),
+                      label: const Text("15 Keys (5x3) Standard", style: TextStyle(fontSize: 11, color: Colors.white)),
+                      onPressed: () {
+                        setDState(() {
+                          cols = 5;
+                          rows = 3;
+                        });
+                      },
+                    ),
+                    ActionChip(
+                      backgroundColor: (cols == 8 && rows == 4) ? VibeTheme.purpleNeon.withOpacity(0.3) : const Color(0xFF222638),
+                      label: const Text("32 Keys (8x4) XL", style: TextStyle(fontSize: 11, color: Colors.white)),
+                      onPressed: () {
+                        setDState(() {
+                          cols = 8;
+                          rows = 4;
+                        });
+                      },
+                    ),
+                    ActionChip(
+                      backgroundColor: (cols == 3 && rows == 2) ? Colors.amberAccent.withOpacity(0.3) : const Color(0xFF222638),
+                      label: const Text("6 Keys (3x2) Mini", style: TextStyle(fontSize: 11, color: Colors.white)),
+                      onPressed: () {
+                        setDState(() {
+                          cols = 3;
+                          rows = 2;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+                const Divider(height: 24, color: Colors.white12),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Columns:"),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: cols > 2 ? () => setDState(() => cols--) : null,
-                      ),
-                      Text("$cols", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: cols < 8 ? () => setDState(() => cols++) : null,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text("Rows:"),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: rows > 2 ? () => setDState(() => rows--) : null,
-                      ),
-                      Text("$rows", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      IconButton(
-                        icon: const Icon(Icons.add_circle_outline),
-                        onPressed: rows < 6 ? () => setDState(() => rows++) : null,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Columns:"),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: cols > 2 ? () => setDState(() => cols--) : null,
+                        ),
+                        Text("$cols", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: cols < 8 ? () => setDState(() => cols++) : null,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Rows:"),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline),
+                          onPressed: rows > 2 ? () => setDState(() => rows--) : null,
+                        ),
+                        Text("$rows", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        IconButton(
+                          icon: const Icon(Icons.add_circle_outline),
+                          onPressed: rows < 6 ? () => setDState(() => rows++) : null,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text("Cancel")),
@@ -273,7 +277,9 @@ class _DeckScreenState extends State<DeckScreen> {
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: VibeTheme.background,
-        body: Center(child: CircularProgressIndicator(color: VibeTheme.cyanNeon)),
+        body: Center(
+          child: VibeCyberLoader(statusText: "SYNCHRONIZING VIBEDECK MATRIX..."),
+        ),
       );
     }
 
@@ -283,19 +289,39 @@ class _DeckScreenState extends State<DeckScreen> {
     return Scaffold(
       backgroundColor: VibeTheme.background,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Responsive Top Header Bar
-            _buildTopBar(isLandscape),
+            Column(
+              children: [
+                // Responsive Top Header Bar
+                _buildTopBar(isLandscape),
 
-            // Live Volume, Mic Mute & Telemetry Bar
-            _buildTelemetryBar(isLandscape),
+                // Live Volume, Mic Mute & Telemetry Bar
+                _buildTelemetryBar(isLandscape),
 
-            // Body based on active mode
-            Expanded(
-              child: _activeMode == 0
-                  ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
-                  : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
+                // Horizontal Preset Chips (1-tap deck switching)
+                if (_activeMode == 0) _buildProfileStrip(isLandscape),
+
+                // Body based on active mode with bottom padding for dock
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: isLandscape ? 54 : 62),
+                    child: _activeMode == 0
+                        ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
+                        : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
+                  ),
+                ),
+              ],
+            ),
+
+            // Ergonomic Floating Cyber-Dock (Deck / Mouse / Keyboard)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: isLandscape ? 6 : 12,
+              child: Center(
+                child: _buildFloatingCyberDock(isLandscape),
+              ),
             ),
           ],
         ),
@@ -312,14 +338,14 @@ class _DeckScreenState extends State<DeckScreen> {
         final isNarrow = MediaQuery.of(context).size.width < 460;
 
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: isLandscape ? 8 : 12, vertical: isLandscape ? 2 : 4),
+          padding: EdgeInsets.symmetric(horizontal: isLandscape ? 10 : 14, vertical: isLandscape ? 2 : 4),
           decoration: BoxDecoration(
             color: VibeTheme.surfaceHighlight.withOpacity(0.6),
             border: const Border(bottom: BorderSide(color: Colors.white12, width: 1)),
           ),
           child: Row(
             children: [
-              // Logo & App Title
+              // Logo & App Title & Connection Status
               InkWell(
                 onTap: () {
                   showDialog(context: context, builder: (_) => const ConnectDialog());
@@ -334,29 +360,30 @@ class _DeckScreenState extends State<DeckScreen> {
                         borderRadius: BorderRadius.circular(6),
                         child: Image.asset(
                           'assets/logo.png',
-                          width: 22,
-                          height: 22,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.stream_rounded, color: VibeTheme.cyanNeon, size: 20),
+                          width: 24,
+                          height: 24,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.stream_rounded, color: VibeTheme.cyanNeon, size: 22),
                         ),
                       ),
                       if (!isNarrow && !isLandscape) ...[
-                        const SizedBox(width: 6),
+                        const SizedBox(width: 8),
                         const Text(
                           "VibeDeck",
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5),
+                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5),
                         ),
                       ],
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 8),
+                      // Animated pulse status dot
                       Container(
-                        width: 7,
-                        height: 7,
+                        width: 8,
+                        height: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isConnected
                               ? const Color(0xFF00FF88)
                               : (isConnecting ? Colors.amberAccent : Colors.redAccent),
                           boxShadow: isConnected
-                              ? [const BoxShadow(color: Color(0xFF00FF88), blurRadius: 4, spreadRadius: 1)]
+                              ? [const BoxShadow(color: Color(0xFF00FF88), blurRadius: 6, spreadRadius: 1.5)]
                               : null,
                         ),
                       ),
@@ -365,102 +392,40 @@ class _DeckScreenState extends State<DeckScreen> {
                 ),
               ),
 
-              const SizedBox(width: 6),
-
-              // Profile Switcher (Only shown in Deck mode)
-              if (_activeMode == 0)
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<int>(
-                        value: _currentProfileIndex,
-                        isDense: true,
-                        isExpanded: true,
-                        dropdownColor: const Color(0xFF1E2235),
-                        style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.w600),
-                        items: List.generate(_profiles.length, (idx) {
-                          return DropdownMenuItem(
-                            value: idx,
-                            child: Text(_profiles[idx].name, overflow: TextOverflow.ellipsis),
-                          );
-                        }),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() => _currentProfileIndex = val);
-                            StorageService.saveSelectedProfileId(_profiles[val].id);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-
-              if (_activeMode == 0)
-                IconButton(
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                  icon: const Icon(Icons.add_circle_outline, size: 18, color: VibeTheme.cyanNeon),
-                  tooltip: "Add Profile",
-                  onPressed: _addNewProfile,
-                ),
-
               const Spacer(),
 
-              // Mode Switcher: Deck | Trackpad | Keyboard
-              Container(
-                height: 28,
-                decoration: BoxDecoration(
-                  color: Colors.black38,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildModeTab(0, Icons.grid_view_rounded, "Deck"),
-                    _buildModeTab(1, Icons.touch_app_rounded, "Mouse"),
-                    _buildModeTab(2, Icons.keyboard_rounded, "Keys"),
-                  ],
-                ),
-              ),
-
-              const SizedBox(width: 4),
-
-              // Grid Size button (in Deck mode)
-              if (_activeMode == 0)
+              // Quick Action Buttons in Top Bar
+              if (_activeMode == 0) ...[
+                // Grid Density button
                 IconButton(
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                  icon: const Icon(Icons.aspect_ratio_rounded, size: 18, color: Colors.white70),
-                  tooltip: "Grid Density",
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  icon: const Icon(Icons.aspect_ratio_rounded, size: 19, color: Colors.white70),
+                  tooltip: "Grid Density (Rows x Cols)",
                   onPressed: _adjustGridSize,
                 ),
+                const SizedBox(width: 4),
 
-              // Edit button (in Deck mode)
-              if (_activeMode == 0)
+                // Edit Button
                 IconButton(
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                   icon: Icon(
                     _isEditMode ? Icons.done_all_rounded : Icons.edit_note_rounded,
                     color: _isEditMode ? Colors.amberAccent : Colors.white70,
-                    size: 20,
+                    size: 21,
                   ),
                   tooltip: _isEditMode ? "Exit Edit" : "Customize Buttons",
                   onPressed: () => setState(() => _isEditMode = !_isEditMode),
                 ),
+                const SizedBox(width: 4),
+              ],
 
-              // Connect dialog button
+              // Connect / Pair Settings Dialog
               IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 30, minHeight: 30),
-                icon: const Icon(Icons.settings_rounded, size: 18, color: Colors.white70),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                icon: const Icon(Icons.settings_rounded, size: 19, color: Colors.white70),
                 tooltip: "Pair / Connect Settings",
                 onPressed: () {
                   showDialog(context: context, builder: (_) => const ConnectDialog());
@@ -473,28 +438,174 @@ class _DeckScreenState extends State<DeckScreen> {
     );
   }
 
-  Widget _buildModeTab(int index, IconData icon, String label) {
+  // Horizontal Scrollable Deck Preset Ribbon (1-Tap Switching)
+  Widget _buildProfileStrip(bool isLandscape) {
+    return Container(
+      height: isLandscape ? 36 : 40,
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: _profiles.length + 1,
+        itemBuilder: (context, idx) {
+          if (idx == _profiles.length) {
+            // "+ New Deck" Chip
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+              child: ActionChip(
+                backgroundColor: const Color(0xFF161824),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: const BorderSide(color: Colors.white12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                avatar: const Icon(Icons.add_rounded, size: 16, color: VibeTheme.cyanNeon),
+                label: const Text(
+                  "New Deck",
+                  style: TextStyle(fontSize: 11, color: VibeTheme.cyanNeon, fontWeight: FontWeight.bold),
+                ),
+                onPressed: _addNewProfile,
+              ),
+            );
+          }
+
+          final isSelected = idx == _currentProfileIndex;
+          final p = _profiles[idx];
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+            child: ChoiceChip(
+              selected: isSelected,
+              selectedColor: VibeTheme.cyanNeon.withOpacity(0.22),
+              backgroundColor: const Color(0xFF141724),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(
+                  color: isSelected ? VibeTheme.cyanNeon : Colors.white12,
+                  width: isSelected ? 1.5 : 1.0,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              avatar: Icon(
+                _getProfileIcon(p.name),
+                size: 15,
+                color: isSelected ? VibeTheme.cyanNeon : Colors.white60,
+              ),
+              label: Text(
+                p.name,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? Colors.white : Colors.white70,
+                ),
+              ),
+              onSelected: (_) {
+                HapticFeedback.selectionClick();
+                setState(() => _currentProfileIndex = idx);
+                StorageService.saveSelectedProfileId(p.id);
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  IconData _getProfileIcon(String name) {
+    final lower = name.toLowerCase();
+    if (lower.contains('game') || lower.contains('play') || lower.contains('steam')) {
+      return Icons.videogame_asset_rounded;
+    } else if (lower.contains('media') || lower.contains('music') || lower.contains('spotify')) {
+      return Icons.music_note_rounded;
+    } else if (lower.contains('stream') || lower.contains('obs') || lower.contains('twitch')) {
+      return Icons.smart_display_rounded;
+    } else if (lower.contains('dev') || lower.contains('code') || lower.contains('work')) {
+      return Icons.terminal_rounded;
+    } else if (lower.contains('chat') || lower.contains('discord')) {
+      return Icons.forum_rounded;
+    }
+    return Icons.grid_view_rounded;
+  }
+
+  // Ergonomic Floating Cyber-Dock (Deck | Mouse | Keyboard)
+  Widget _buildFloatingCyberDock(bool isLandscape) {
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.all(3.5),
+      decoration: BoxDecoration(
+        color: const Color(0xE60D0F18),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: VibeTheme.cyanNeon.withOpacity(0.35), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.55),
+            blurRadius: 14,
+            spreadRadius: 2,
+            offset: const Offset(0, 4),
+          ),
+          BoxShadow(
+            color: VibeTheme.cyanNeon.withOpacity(0.12),
+            blurRadius: 10,
+            spreadRadius: -1,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildDockTab(0, Icons.grid_view_rounded, "Deck"),
+          _buildDockTab(1, Icons.mouse_rounded, "Mouse"),
+          _buildDockTab(2, Icons.keyboard_rounded, "Keys"),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDockTab(int index, IconData icon, String label) {
     final isSelected = _activeMode == index;
-    return InkWell(
-      onTap: () => setState(() => _activeMode = index),
-      borderRadius: BorderRadius.circular(6),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        setState(() => _activeMode = index);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? VibeTheme.cyanNeon.withOpacity(0.25) : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(20),
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFF00F2FE), Color(0xFF4FACFE)],
+                )
+              : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: VibeTheme.cyanNeon.withOpacity(0.35),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                  )
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: isSelected ? VibeTheme.cyanNeon : Colors.grey),
-            const SizedBox(width: 3),
+            Icon(
+              icon,
+              size: 18,
+              color: isSelected ? Colors.black : Colors.white70,
+            ),
+            const SizedBox(width: 6),
             Text(
               label,
               style: TextStyle(
-                fontSize: 10.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.grey,
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                color: isSelected ? Colors.black : Colors.white70,
+                letterSpacing: 0.3,
               ),
             ),
           ],

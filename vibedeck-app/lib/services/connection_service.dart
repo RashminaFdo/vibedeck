@@ -266,6 +266,22 @@ class ConnectionService extends ChangeNotifier {
     });
   }
 
+  void sendKeyDown(String key) {
+    if (state != VibeConnectionState.connected) return;
+    _sendJson({
+      "type": "KEY_DOWN",
+      "key": key,
+    });
+  }
+
+  void sendKeyUp(String key) {
+    if (state != VibeConnectionState.connected) return;
+    _sendJson({
+      "type": "KEY_UP",
+      "key": key,
+    });
+  }
+
   void sendPowerAction(String action) {
     if (state != VibeConnectionState.connected) return;
     _sendJson({

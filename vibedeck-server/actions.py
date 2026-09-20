@@ -34,6 +34,8 @@ VK_CODES = {
     "win": 0x5B,
     "windows": 0x5B,
     "meta": 0x5B,
+    "capslock": 0x14,
+    "caps": 0x14,
     
     # Common keys
     "esc": 0x1B,
@@ -44,15 +46,36 @@ VK_CODES = {
     "space": 0x20,
     "backspace": 0x08,
     "delete": 0x2E,
-    "up": 0x25,
+    "del": 0x2E,
+    "insert": 0x2D,
+    "ins": 0x2D,
+    "up": 0x26,
     "down": 0x28,
     "left": 0x25,
     "right": 0x27,
     "home": 0x24,
     "end": 0x23,
     "pageup": 0x21,
+    "pgup": 0x21,
     "pagedown": 0x22,
+    "pgdn": 0x22,
     "printscreen": 0x2C,
+    "prtsc": 0x2C,
+    "numlock": 0x90,
+    "scrolllock": 0x91,
+    
+    # Punctuation & standard OEM keys
+    ";": 0xBA,
+    "=": 0xBB,
+    ",": 0xBC,
+    "-": 0xBD,
+    ".": 0xBE,
+    "/": 0xBF,
+    "`": 0xC0,
+    "[": 0xDB,
+    "\\": 0xDC,
+    "]": 0xDD,
+    "'": 0xDE,
     
     # F-keys
     "f1": 0x70, "f2": 0x71, "f3": 0x72, "f4": 0x73,
@@ -65,6 +88,13 @@ for char in "abcdefghijklmnopqrstuvwxyz":
     VK_CODES[char] = ord(char.upper())
 for num in "0123456789":
     VK_CODES[num] = ord(num)
+
+# Shift-required symbols mapping to base key
+SHIFT_SYMBOLS = {
+    '~': '`', '!': '1', '@': '2', '#': '3', '$': '4', '%': '5', '^': '6',
+    '&': '7', '*': '8', '(': '9', ')': '0', '_': '-', '+': '=', '{': '[',
+    '}': ']', '|': '\\', ':': ';', '"': "'", '<': ',', '>': '.', '?': '/',
+}
 
 # Keyboard event flags
 KEYEVENTF_KEYDOWN = 0x0000
@@ -83,30 +113,10 @@ MOUSEEVENTF_MIDDLEUP = 0x0040
 MOUSEEVENTF_WHEEL = 0x0800
 
 
-# SendInput structs for high-reliability Unicode text typing
-class KEYBDINPUT(ctypes.Structure):
-    _fields_ = [
-        ('wVk', wintypes.WORD),
-        ('wScan', wintypes.WORD),
-        ('dwFlags', wintypes.DWORD),
-        ('time', wintypes.DWORD),
-        ('dwExtraInfo', ctypes.c_ulonglong)
-    ]
-
-class INPUT(ctypes.Structure):
-    class _INPUT(ctypes.Union):
-        _fields_ = [('ki', KEYBDINPUT)]
-    _anonymous_ = ('_input',)
-    _fields_ = [
-        ('type', wintypes.DWORD),
-        ('_input', _INPUT)
-    ]
-
-
 def _send_key(vk_code: int, keyup: bool = False):
     """Sends a single virtual key event via Windows keybd_event."""
     flags = KEYEVENTF_KEYUP if keyup else KEYEVENTF_KEYDOWN
-    if vk_code in (0xB3, 0xB0, 0xB1, 0xB2, 0xAD, 0xAE, 0xAF, 0x5B, 0x25, 0x26, 0x27, 0x28, 0x2E, 0x2C):
+    if vk_code in (0xB3, 0xB0, 0xB1, 0xB2, 0xAD, 0xAE, 0xAF, 0x5B, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, 0x2C):
         flags |= KEYEVENTF_EXTENDEDKEY
     ctypes.windll.user32.keybd_event(vk_code, 0, flags, 0)
 
@@ -125,17 +135,79 @@ def press_media_key(action_name: str) -> bool:
     return True
 
 
-def press_special_key(key_name: str) -> bool:
-    """Presses a single key (e.g. 'enter', 'esc', 'space', 'tab')."""
+def key_down(key_name: str) -> bool:
+    """Holds a key down (useful for modifiers or held inputs)."""
     clean_k = key_name.lower().strip()
     code = VK_CODES.get(clean_k)
-    if code is None:
-        logger.warning(f"Unknown special key: {key_name}")
+    if code is not None:
+        _send_key(code, keyup=False)
+        return True
+    return False
+
+
+def key_up(key_name: str) -> bool:
+    """Releases a held key."""
+    clean_k = key_name.lower().strip()
+    code = VK_CODES.get(clean_k)
+    if code is not None:
+        _send_key(code, keyup=True)
+        return True
+    return False
+
+
+def press_special_key(key_name: str) -> bool:
+    """
+    Presses a single key (e.g. 'enter', 'esc', 'space', 'tab', 'a', 'A', '!', etc.).
+    Fully handles uppercase shifted letters, symbols, and Unicode fallbacks.
+    """
+    if not key_name:
         return False
-    _send_key(code, keyup=False)
-    time.sleep(0.02)
-    _send_key(code, keyup=True)
-    return True
+
+    # 1. Handle shifted symbols (e.g. '!', '@', '#', '{', etc.)
+    if key_name in SHIFT_SYMBOLS:
+        base_char = SHIFT_SYMBOLS[key_name]
+        base_code = VK_CODES.get(base_char)
+        if base_code is not None:
+            _send_key(0x10, keyup=False)  # Shift down
+            time.sleep(0.01)
+            _send_key(base_code, keyup=False)
+            time.sleep(0.01)
+            _send_key(base_code, keyup=True)
+            time.sleep(0.01)
+            _send_key(0x10, keyup=True)   # Shift up
+            return True
+
+    # 2. Handle uppercase single letters (e.g. 'A', 'Z')
+    if len(key_name) == 1 and key_name.isupper() and key_name.lower() in VK_CODES:
+        base_code = VK_CODES[key_name.lower()]
+        _send_key(0x10, keyup=False)  # Shift down
+        time.sleep(0.01)
+        _send_key(base_code, keyup=False)
+        time.sleep(0.01)
+        _send_key(base_code, keyup=True)
+        time.sleep(0.01)
+        _send_key(0x10, keyup=True)   # Shift up
+        return True
+
+    # 3. Direct VK lookup (case-insensitive for named keys like 'enter', 'tab', 'space', or 'a')
+    clean_k = key_name.lower().strip()
+    code = VK_CODES.get(clean_k)
+    if code is not None:
+        _send_key(code, keyup=False)
+        time.sleep(0.015)
+        _send_key(code, keyup=True)
+        return True
+
+    # 4. Fallback to hardware keybd_event Unicode scan for arbitrary characters
+    if len(key_name) == 1:
+        char_code = ord(key_name)
+        ctypes.windll.user32.keybd_event(0, char_code, KEYEVENTF_UNICODE, 0)
+        time.sleep(0.01)
+        ctypes.windll.user32.keybd_event(0, char_code, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0)
+        return True
+
+    logger.warning(f"Unknown special key: {key_name}")
+    return False
 
 
 def execute_hotkey(keys: list[str]) -> bool:
@@ -167,18 +239,29 @@ def execute_hotkey(keys: list[str]) -> bool:
 
 
 def type_text(text: str) -> bool:
-    """Types arbitrary Unicode text into active Windows focus without third-party dependencies."""
+    """
+    Types arbitrary text (including newlines and Unicode) into active Windows focus.
+    Uses universal keybd_event with KEYEVENTF_UNICODE to bypass SendInput 64-bit struct padding issues.
+    """
     try:
         user32 = ctypes.windll.user32
         for char in text:
-            # Send Unicode key down and up
-            code = ord(char)
-            inp_down = INPUT(type=1, ki=KEYBDINPUT(wVk=0, wScan=code, dwFlags=KEYEVENTF_UNICODE, time=0, dwExtraInfo=0))
-            inp_up = INPUT(type=1, ki=KEYBDINPUT(wVk=0, wScan=code, dwFlags=KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, time=0, dwExtraInfo=0))
-            user32.SendInput(1, ctypes.byref(inp_down), ctypes.sizeof(INPUT))
-            time.sleep(0.005)
-            user32.SendInput(1, ctypes.byref(inp_up), ctypes.sizeof(INPUT))
-            time.sleep(0.005)
+            if char == '\n':
+                _send_key(0x0D, keyup=False)  # Enter down
+                time.sleep(0.005)
+                _send_key(0x0D, keyup=True)   # Enter up
+                time.sleep(0.005)
+            elif char == '\t':
+                _send_key(0x09, keyup=False)
+                time.sleep(0.005)
+                _send_key(0x09, keyup=True)
+                time.sleep(0.005)
+            else:
+                code = ord(char)
+                user32.keybd_event(0, code, KEYEVENTF_UNICODE, 0)
+                time.sleep(0.005)
+                user32.keybd_event(0, code, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0)
+                time.sleep(0.005)
         return True
     except Exception as e:
         logger.error(f"Failed to type text: {e}")

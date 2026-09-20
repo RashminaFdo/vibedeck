@@ -198,6 +198,14 @@ async def handle_message(websocket, message_str: str):
         key = str(msg.get("key", ""))
         actions.press_special_key(key)
 
+    elif msg_type == "KEY_DOWN":
+        key = str(msg.get("key", ""))
+        actions.key_down(key)
+
+    elif msg_type == "KEY_UP":
+        key = str(msg.get("key", ""))
+        actions.key_up(key)
+
     elif msg_type == "MIC_MUTE":
         new_state = actions.toggle_mic_mute()
         await broadcast_state({
