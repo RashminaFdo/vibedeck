@@ -13,3 +13,7 @@ venv/
 # Flutter / Dart
 .dart_tool/
 build/
+
+# Logs
+*.log
+

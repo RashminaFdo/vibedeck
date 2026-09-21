@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -105,6 +106,18 @@ def free_port(port: int = WS_PORT):
                 pass
     except Exception as e:
         logger.debug(f"free_port check: {e}")
+
+    try:
+        out = subprocess.check_output(f'netstat -ano | findstr :{port}', shell=True, text=True)
+        for line in out.strip().splitlines():
+            parts = line.split()
+            if len(parts) >= 5 and "LISTENING" in parts:
+                pid = int(parts[-1])
+                if pid != os.getpid() and pid > 0:
+                    logger.info(f"Freeing port {port} via taskkill on PID {pid}")
+                    subprocess.run(f"taskkill /f /pid {pid}", shell=True, capture_output=True)
+    except Exception:
+        pass
 
 
 async def broadcast_state(data: dict):

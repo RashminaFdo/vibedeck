@@ -10,7 +10,9 @@
           "id": "btn_play_pause",
           "title": "Play/Pause",
           "action_type": "media",
-          "payload": { "key": "media_play_pause" },
+          "payload": {
+            "key": "media_play_pause"
+          },
           "color": "#6C5CE7",
           "icon": "play_arrow"
         },
@@ -18,7 +20,9 @@
           "id": "btn_prev",
           "title": "Prev Track",
           "action_type": "media",
-          "payload": { "key": "media_prev" },
+          "payload": {
+            "key": "media_prev"
+          },
           "color": "#0984E3",
           "icon": "skip_previous"
         },
@@ -26,7 +30,9 @@
           "id": "btn_next",
           "title": "Next Track",
           "action_type": "media",
-          "payload": { "key": "media_next" },
+          "payload": {
+            "key": "media_next"
+          },
           "color": "#00CEC9",
           "icon": "skip_next"
         },
@@ -34,7 +40,9 @@
           "id": "btn_vol_up",
           "title": "Volume +",
           "action_type": "media",
-          "payload": { "key": "volume_up" },
+          "payload": {
+            "key": "volume_up"
+          },
           "color": "#00B894",
           "icon": "volume_up"
         },
@@ -42,7 +50,9 @@
           "id": "btn_vol_down",
           "title": "Volume -",
           "action_type": "media",
-          "payload": { "key": "volume_down" },
+          "payload": {
+            "key": "volume_down"
+          },
           "color": "#00CEC9",
           "icon": "volume_down"
         },
@@ -50,7 +60,9 @@
           "id": "btn_mute_master",
           "title": "Mute Master",
           "action_type": "mute",
-          "payload": { "key": "volume_mute" },
+          "payload": {
+            "key": "volume_mute"
+          },
           "color": "#D63031",
           "icon": "volume_off"
         },
@@ -66,7 +78,9 @@
           "id": "btn_discord_deafen",
           "title": "Deafen",
           "action_type": "discord",
-          "payload": { "action": "toggle_deafen" },
+          "payload": {
+            "action": "toggle_deafen"
+          },
           "color": "#5865F2",
           "icon": "headset_off"
         },
@@ -74,7 +88,9 @@
           "id": "btn_brave",
           "title": "Brave",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+          },
           "color": "#FF5500",
           "icon": "language"
         },
@@ -82,7 +98,9 @@
           "id": "btn_spotify",
           "title": "Spotify",
           "action_type": "spotify",
-          "payload": { "action": "open" },
+          "payload": {
+            "action": "open"
+          },
           "color": "#1DB954",
           "icon": "music_note"
         },
@@ -90,7 +108,9 @@
           "id": "btn_discord",
           "title": "Discord",
           "action_type": "discord",
-          "payload": { "action": "open" },
+          "payload": {
+            "action": "open"
+          },
           "color": "#5865F2",
           "icon": "forum"
         },
@@ -98,7 +118,9 @@
           "id": "btn_obs",
           "title": "OBS Studio",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
+          },
           "color": "#302E31",
           "icon": "smart_display"
         },
@@ -106,7 +128,9 @@
           "id": "btn_davinci",
           "title": "DaVinci",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe"
+          },
           "color": "#E74C3C",
           "icon": "movie_edit"
         },
@@ -114,7 +138,9 @@
           "id": "btn_steam",
           "title": "Steam",
           "action_type": "app",
-          "payload": { "target": "steam:" },
+          "payload": {
+            "target": "steam:"
+          },
           "color": "#171A21",
           "icon": "sports_esports"
         },
@@ -122,7 +148,9 @@
           "id": "btn_vscode",
           "title": "VS Code",
           "action_type": "app",
-          "payload": { "target": "code" },
+          "payload": {
+            "target": "code"
+          },
           "color": "#007ACC",
           "icon": "code"
         },
@@ -130,7 +158,9 @@
           "id": "btn_terminal",
           "title": "Terminal",
           "action_type": "app",
-          "payload": { "target": "wt.exe" },
+          "payload": {
+            "target": "wt.exe"
+          },
           "color": "#2D3436",
           "icon": "terminal"
         },
@@ -138,7 +168,9 @@
           "id": "btn_screenshot",
           "title": "Snip Tool",
           "action_type": "system",
-          "payload": { "command": "screenshot" },
+          "payload": {
+            "command": "screenshot"
+          },
           "color": "#F39C12",
           "icon": "crop"
         },
@@ -146,7 +178,9 @@
           "id": "btn_taskmgr",
           "title": "Task Mgr",
           "action_type": "system",
-          "payload": { "command": "task_manager" },
+          "payload": {
+            "command": "task_manager"
+          },
           "color": "#E74C3C",
           "icon": "memory"
         },
@@ -154,7 +188,9 @@
           "id": "btn_desktop",
           "title": "Desktop",
           "action_type": "system",
-          "payload": { "command": "show_desktop" },
+          "payload": {
+            "command": "show_desktop"
+          },
           "color": "#3498DB",
           "icon": "desktop_windows"
         },
@@ -162,7 +198,9 @@
           "id": "btn_calc",
           "title": "Calculator",
           "action_type": "app",
-          "payload": { "target": "calc.exe" },
+          "payload": {
+            "target": "calc.exe"
+          },
           "color": "#9B59B6",
           "icon": "calculate"
         },
@@ -170,7 +208,9 @@
           "id": "btn_notepad",
           "title": "Notepad",
           "action_type": "app",
-          "payload": { "target": "notepad.exe" },
+          "payload": {
+            "target": "notepad.exe"
+          },
           "color": "#1ABC9C",
           "icon": "description"
         },
@@ -178,7 +218,9 @@
           "id": "btn_explorer",
           "title": "Explorer",
           "action_type": "app",
-          "payload": { "target": "explorer.exe" },
+          "payload": {
+            "target": "explorer.exe"
+          },
           "color": "#F1C40F",
           "icon": "folder_open"
         },
@@ -186,7 +228,9 @@
           "id": "btn_alt_tab",
           "title": "Alt + Tab",
           "action_type": "system",
-          "payload": { "command": "alt_tab" },
+          "payload": {
+            "command": "alt_tab"
+          },
           "color": "#34495E",
           "icon": "tab"
         },
@@ -194,7 +238,9 @@
           "id": "btn_screen_off",
           "title": "Screen Off",
           "action_type": "system",
-          "payload": { "command": "screen_off" },
+          "payload": {
+            "command": "screen_off"
+          },
           "color": "#7F8C8D",
           "icon": "brightness_2"
         },
@@ -202,7 +248,9 @@
           "id": "btn_bright_up",
           "title": "Bright +",
           "action_type": "system",
-          "payload": { "command": "brightness_up" },
+          "payload": {
+            "command": "brightness_up"
+          },
           "color": "#F39C12",
           "icon": "brightness_high"
         },
@@ -210,7 +258,9 @@
           "id": "btn_bright_down",
           "title": "Bright -",
           "action_type": "system",
-          "payload": { "command": "brightness_down" },
+          "payload": {
+            "command": "brightness_down"
+          },
           "color": "#E67E22",
           "icon": "brightness_low"
         },
@@ -218,7 +268,9 @@
           "id": "btn_spotify_like",
           "title": "Like Song",
           "action_type": "spotify",
-          "payload": { "action": "like" },
+          "payload": {
+            "action": "like"
+          },
           "color": "#1DB954",
           "icon": "favorite"
         },
@@ -226,7 +278,9 @@
           "id": "btn_spotify_shuffle",
           "title": "Shuffle",
           "action_type": "spotify",
-          "payload": { "action": "shuffle" },
+          "payload": {
+            "action": "shuffle"
+          },
           "color": "#2ECC71",
           "icon": "shuffle"
         },
@@ -234,7 +288,12 @@
           "id": "btn_copy",
           "title": "Copy",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "c"] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              "c"
+            ]
+          },
           "color": "#95A5A6",
           "icon": "content_copy"
         },
@@ -242,7 +301,12 @@
           "id": "btn_paste",
           "title": "Paste",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "v"] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              "v"
+            ]
+          },
           "color": "#BDC3C7",
           "icon": "content_paste"
         },
@@ -250,7 +314,9 @@
           "id": "btn_lock",
           "title": "Lock PC",
           "action_type": "system",
-          "payload": { "command": "lock" },
+          "payload": {
+            "command": "lock"
+          },
           "color": "#E74C3C",
           "icon": "lock"
         },
@@ -258,7 +324,9 @@
           "id": "btn_sleep",
           "title": "Sleep PC",
           "action_type": "system",
-          "payload": { "command": "sleep" },
+          "payload": {
+            "command": "sleep"
+          },
           "color": "#8E44AD",
           "icon": "bedtime"
         }
@@ -274,7 +342,9 @@
           "id": "btn_valorant",
           "title": "VALORANT",
           "action_type": "app",
-          "payload": { "target": "C:\\Users\\Public\\Desktop\\VALORANT.lnk" },
+          "payload": {
+            "target": "C:\\Users\\Public\\Desktop\\VALORANT.lnk"
+          },
           "color": "#FD4556",
           "icon": "sports_esports"
         },
@@ -282,7 +352,9 @@
           "id": "btn_nfs_heat",
           "title": "NFS Heat",
           "action_type": "app",
-          "payload": { "target": "C:\\Users\\Public\\Desktop\\Play Need for Speed Heat.lnk" },
+          "payload": {
+            "target": "C:\\Users\\Public\\Desktop\\Play Need for Speed Heat.lnk"
+          },
           "color": "#FF007F",
           "icon": "directions_car"
         },
@@ -290,7 +362,9 @@
           "id": "btn_ets2",
           "title": "Euro Truck 2",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Euro Truck Simulator 2\\bin\\win_x64\\eurotrucks2.exe" },
+          "payload": {
+            "target": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Euro Truck Simulator 2\\bin\\win_x64\\eurotrucks2.exe"
+          },
           "color": "#FFA500",
           "icon": "local_shipping"
         },
@@ -298,7 +372,9 @@
           "id": "btn_mkx",
           "title": "Mortal Kombat X",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\MK10\\Binaries\\Retail\\MK10.exe" },
+          "payload": {
+            "target": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\MK10\\Binaries\\Retail\\MK10.exe"
+          },
           "color": "#D4AC0D",
           "icon": "fitness_center"
         },
@@ -306,7 +382,9 @@
           "id": "btn_clash",
           "title": "Clash of Clans",
           "action_type": "app",
-          "payload": { "target": "C:\\Users\\fdora\\Desktop\\Clash of Clans.lnk" },
+          "payload": {
+            "target": "C:\\Users\\fdora\\Desktop\\Clash of Clans.lnk"
+          },
           "color": "#FFC000",
           "icon": "shield"
         },
@@ -314,7 +392,9 @@
           "id": "btn_brave_browser",
           "title": "Brave",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe"
+          },
           "color": "#FB542B",
           "icon": "language"
         },
@@ -322,7 +402,9 @@
           "id": "btn_obs_studio",
           "title": "OBS Studio",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
+          },
           "color": "#302E31",
           "icon": "smart_display"
         },
@@ -330,7 +412,9 @@
           "id": "btn_davinci_resolve",
           "title": "DaVinci Resolve",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\Resolve.exe"
+          },
           "color": "#E74C3C",
           "icon": "movie_edit"
         },
@@ -338,7 +422,9 @@
           "id": "btn_steam_app",
           "title": "Steam",
           "action_type": "app",
-          "payload": { "target": "steam:" },
+          "payload": {
+            "target": "steam:"
+          },
           "color": "#171A21",
           "icon": "videogame_asset"
         },
@@ -346,7 +432,9 @@
           "id": "btn_epic_games",
           "title": "Epic Games",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe"
+          },
           "color": "#333333",
           "icon": "games"
         },
@@ -354,7 +442,9 @@
           "id": "btn_mouse_sw",
           "title": "Mouse Software",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files (x86)\\Fantech\\PHANTOM II VX6\\Gaming Mouse 3.0.exe" },
+          "payload": {
+            "target": "C:\\Program Files (x86)\\Fantech\\PHANTOM II VX6\\Gaming Mouse 3.0.exe"
+          },
           "color": "#9B59B6",
           "icon": "mouse"
         },
@@ -362,7 +452,9 @@
           "id": "btn_nvidia_app",
           "title": "NVIDIA App",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\CEF\\NVIDIA App.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\NVIDIA Corporation\\NVIDIA App\\CEF\\NVIDIA App.exe"
+          },
           "color": "#76B900",
           "icon": "memory"
         },
@@ -370,7 +462,9 @@
           "id": "btn_discord_app",
           "title": "Discord",
           "action_type": "discord",
-          "payload": { "action": "open" },
+          "payload": {
+            "action": "open"
+          },
           "color": "#5865F2",
           "icon": "forum"
         },
@@ -378,7 +472,9 @@
           "id": "btn_spotify_app",
           "title": "Spotify",
           "action_type": "spotify",
-          "payload": { "action": "open" },
+          "payload": {
+            "action": "open"
+          },
           "color": "#1DB954",
           "icon": "music_note"
         },
@@ -386,7 +482,9 @@
           "id": "btn_medal_tv",
           "title": "Medal Clips",
           "action_type": "app",
-          "payload": { "target": "C:\\Users\\fdora\\AppData\\Local\\Medal\\current\\Medal.exe" },
+          "payload": {
+            "target": "C:\\Users\\fdora\\AppData\\Local\\Medal\\current\\Medal.exe"
+          },
           "color": "#FFBF00",
           "icon": "videocam"
         },
@@ -394,7 +492,9 @@
           "id": "btn_vscode_app",
           "title": "VS Code",
           "action_type": "app",
-          "payload": { "target": "code" },
+          "payload": {
+            "target": "code"
+          },
           "color": "#007ACC",
           "icon": "code"
         },
@@ -402,7 +502,9 @@
           "id": "btn_play_games",
           "title": "Play Games",
           "action_type": "app",
-          "payload": { "target": "C:\\Program Files\\Google\\Play Games\\Bootstrapper.exe" },
+          "payload": {
+            "target": "C:\\Program Files\\Google\\Play Games\\Bootstrapper.exe"
+          },
           "color": "#008744",
           "icon": "sports_esports"
         },
@@ -410,7 +512,9 @@
           "id": "btn_riot_client",
           "title": "Riot Client",
           "action_type": "app",
-          "payload": { "target": "C:\\Riot Games\\Riot Client\\RiotClientServices.exe" },
+          "payload": {
+            "target": "C:\\Riot Games\\Riot Client\\RiotClientServices.exe"
+          },
           "color": "#D63031",
           "icon": "gamepad"
         }
@@ -426,7 +530,9 @@
           "id": "btn_shutdown",
           "title": "Shutdown PC",
           "action_type": "system",
-          "payload": { "command": "shutdown" },
+          "payload": {
+            "command": "shutdown"
+          },
           "color": "#D63031",
           "icon": "power_settings_new"
         },
@@ -434,7 +540,9 @@
           "id": "btn_restart",
           "title": "Restart PC",
           "action_type": "system",
-          "payload": { "command": "restart" },
+          "payload": {
+            "command": "restart"
+          },
           "color": "#E67E22",
           "icon": "restart_alt"
         },
@@ -442,7 +550,9 @@
           "id": "btn_lock_pc",
           "title": "Lock PC",
           "action_type": "system",
-          "payload": { "command": "lock" },
+          "payload": {
+            "command": "lock"
+          },
           "color": "#E74C3C",
           "icon": "lock"
         },
@@ -450,7 +560,9 @@
           "id": "btn_sleep_pc",
           "title": "Sleep PC",
           "action_type": "system",
-          "payload": { "command": "sleep" },
+          "payload": {
+            "command": "sleep"
+          },
           "color": "#8E44AD",
           "icon": "bedtime"
         },
@@ -458,7 +570,9 @@
           "id": "btn_screen_off",
           "title": "Screen Off",
           "action_type": "system",
-          "payload": { "command": "screen_off" },
+          "payload": {
+            "command": "screen_off"
+          },
           "color": "#34495E",
           "icon": "brightness_2"
         },
@@ -466,7 +580,9 @@
           "id": "btn_taskmgr",
           "title": "Task Manager",
           "action_type": "system",
-          "payload": { "command": "task_manager" },
+          "payload": {
+            "command": "task_manager"
+          },
           "color": "#9B59B6",
           "icon": "memory"
         },
@@ -474,7 +590,9 @@
           "id": "btn_bright_up",
           "title": "Brightness +",
           "action_type": "system",
-          "payload": { "command": "brightness_up" },
+          "payload": {
+            "command": "brightness_up"
+          },
           "color": "#F39C12",
           "icon": "brightness_high"
         },
@@ -482,7 +600,9 @@
           "id": "btn_bright_down",
           "title": "Brightness -",
           "action_type": "system",
-          "payload": { "command": "brightness_down" },
+          "payload": {
+            "command": "brightness_down"
+          },
           "color": "#D35400",
           "icon": "brightness_low"
         },
@@ -490,7 +610,9 @@
           "id": "btn_mute",
           "title": "Master Mute",
           "action_type": "mute",
-          "payload": { "key": "volume_mute" },
+          "payload": {
+            "key": "volume_mute"
+          },
           "color": "#E74C3C",
           "icon": "volume_off"
         },
@@ -506,7 +628,9 @@
           "id": "btn_discord_deafen",
           "title": "Deafen",
           "action_type": "discord",
-          "payload": { "action": "toggle_deafen" },
+          "payload": {
+            "action": "toggle_deafen"
+          },
           "color": "#5865F2",
           "icon": "headset_off"
         },
@@ -514,7 +638,9 @@
           "id": "btn_screenshot",
           "title": "Snip Tool",
           "action_type": "system",
-          "payload": { "command": "screenshot" },
+          "payload": {
+            "command": "screenshot"
+          },
           "color": "#F1C40F",
           "icon": "crop"
         },
@@ -522,7 +648,9 @@
           "id": "btn_vol_up",
           "title": "Volume +",
           "action_type": "media",
-          "payload": { "key": "volume_up" },
+          "payload": {
+            "key": "volume_up"
+          },
           "color": "#00B894",
           "icon": "volume_up"
         },
@@ -530,7 +658,9 @@
           "id": "btn_vol_down",
           "title": "Volume -",
           "action_type": "media",
-          "payload": { "key": "volume_down" },
+          "payload": {
+            "key": "volume_down"
+          },
           "color": "#00CEC9",
           "icon": "volume_down"
         },
@@ -538,7 +668,9 @@
           "id": "btn_play_pause",
           "title": "Play / Pause",
           "action_type": "media",
-          "payload": { "key": "media_play_pause" },
+          "payload": {
+            "key": "media_play_pause"
+          },
           "color": "#6C5CE7",
           "icon": "play_arrow"
         },
@@ -546,7 +678,9 @@
           "id": "btn_prev",
           "title": "Prev Track",
           "action_type": "media",
-          "payload": { "key": "media_prev" },
+          "payload": {
+            "key": "media_prev"
+          },
           "color": "#0984E3",
           "icon": "skip_previous"
         },
@@ -554,7 +688,9 @@
           "id": "btn_next",
           "title": "Next Track",
           "action_type": "media",
-          "payload": { "key": "media_next" },
+          "payload": {
+            "key": "media_next"
+          },
           "color": "#00CEC9",
           "icon": "skip_next"
         },
@@ -562,7 +698,9 @@
           "id": "btn_desktop",
           "title": "Desktop",
           "action_type": "system",
-          "payload": { "command": "show_desktop" },
+          "payload": {
+            "command": "show_desktop"
+          },
           "color": "#2980B9",
           "icon": "desktop_windows"
         }
@@ -578,7 +716,9 @@
           "id": "btn_dc_mute",
           "title": "Mute Mic",
           "action_type": "discord",
-          "payload": { "action": "toggle_mute" },
+          "payload": {
+            "action": "toggle_mute"
+          },
           "color": "#FF7675",
           "icon": "mic_off"
         },
@@ -586,7 +726,9 @@
           "id": "btn_dc_deafen",
           "title": "Deafen",
           "action_type": "discord",
-          "payload": { "action": "toggle_deafen" },
+          "payload": {
+            "action": "toggle_deafen"
+          },
           "color": "#D63031",
           "icon": "headset_off"
         },
@@ -594,7 +736,9 @@
           "id": "btn_dc_screenshare",
           "title": "Screen Share",
           "action_type": "discord",
-          "payload": { "action": "screenshare" },
+          "payload": {
+            "action": "screenshare"
+          },
           "color": "#5865F2",
           "icon": "screen_share"
         },
@@ -602,7 +746,9 @@
           "id": "btn_dc_ptt",
           "title": "Push to Talk",
           "action_type": "discord",
-          "payload": { "action": "push_to_talk" },
+          "payload": {
+            "action": "push_to_talk"
+          },
           "color": "#00FF88",
           "icon": "record_voice_over"
         },
@@ -610,7 +756,9 @@
           "id": "btn_dc_accept_call",
           "title": "Accept Call",
           "action_type": "discord",
-          "payload": { "action": "accept_call" },
+          "payload": {
+            "action": "accept_call"
+          },
           "color": "#2ECC71",
           "icon": "call"
         },
@@ -618,7 +766,9 @@
           "id": "btn_dc_decline_call",
           "title": "End Call",
           "action_type": "discord",
-          "payload": { "action": "decline_call" },
+          "payload": {
+            "action": "decline_call"
+          },
           "color": "#E74C3C",
           "icon": "call_end"
         },
@@ -626,7 +776,10 @@
           "id": "btn_dc_voice_general",
           "title": "Voice Room",
           "action_type": "discord",
-          "payload": { "action": "join_voice", "channel_url": "https://discord.com/channels/@me" },
+          "payload": {
+            "action": "join_voice",
+            "channel_url": "https://discord.com/channels/1301383991861055498/1408991881274331298"
+          },
           "color": "#5865F2",
           "icon": "volume_up"
         },
@@ -634,7 +787,10 @@
           "id": "btn_dc_chat_general",
           "title": "Text Chat",
           "action_type": "discord",
-          "payload": { "action": "open_channel", "channel_url": "https://discord.com/channels/@me" },
+          "payload": {
+            "action": "open_channel",
+            "channel_url": "https://discord.com/channels/1301383991861055498/1408669611066523708"
+          },
           "color": "#5865F2",
           "icon": "chat"
         },
@@ -642,7 +798,12 @@
           "id": "btn_dc_inbox",
           "title": "Mentions",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "i"] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              "i"
+            ]
+          },
           "color": "#9B59B6",
           "icon": "alternate_email"
         },
@@ -650,7 +811,12 @@
           "id": "btn_dc_pins",
           "title": "Pinned Msgs",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "p"] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              "p"
+            ]
+          },
           "color": "#F39C12",
           "icon": "push_pin"
         },
@@ -658,7 +824,12 @@
           "id": "btn_dc_search",
           "title": "Find / Jump",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "f"] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              "f"
+            ]
+          },
           "color": "#3498DB",
           "icon": "search"
         },
@@ -666,7 +837,12 @@
           "id": "btn_dc_emoji",
           "title": "Emoji Picker",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "e"] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              "e"
+            ]
+          },
           "color": "#F1C40F",
           "icon": "mood"
         },
@@ -674,7 +850,12 @@
           "id": "btn_dc_settings",
           "title": "Settings",
           "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", ","] },
+          "payload": {
+            "keys": [
+              "ctrl",
+              ","
+            ]
+          },
           "color": "#34495E",
           "icon": "tune"
         },
@@ -682,7 +863,9 @@
           "id": "btn_dc_open",
           "title": "Launch Discord",
           "action_type": "discord",
-          "payload": { "action": "open" },
+          "payload": {
+            "action": "open"
+          },
           "color": "#5865F2",
           "icon": "forum"
         },
@@ -690,7 +873,9 @@
           "id": "btn_dc_close",
           "title": "Quit Discord",
           "action_type": "discord",
-          "payload": { "action": "close" },
+          "payload": {
+            "action": "close"
+          },
           "color": "#7F8C8D",
           "icon": "power_settings_new"
         }
@@ -706,7 +891,9 @@
           "id": "btn_sp_play",
           "title": "Play / Pause",
           "action_type": "spotify",
-          "payload": { "action": "play_pause" },
+          "payload": {
+            "action": "play_pause"
+          },
           "color": "#1DB954",
           "icon": "play_arrow"
         },
@@ -714,7 +901,9 @@
           "id": "btn_sp_prev",
           "title": "Prev Track",
           "action_type": "spotify",
-          "payload": { "action": "prev" },
+          "payload": {
+            "action": "prev"
+          },
           "color": "#0984E3",
           "icon": "skip_previous"
         },
@@ -722,23 +911,29 @@
           "id": "btn_sp_next",
           "title": "Next Track",
           "action_type": "spotify",
-          "payload": { "action": "next" },
+          "payload": {
+            "action": "next"
+          },
           "color": "#00CEC9",
           "icon": "skip_next"
         },
         {
           "id": "btn_sp_vol_up",
           "title": "Spotify Vol +",
-          "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "up"] },
+          "action_type": "spotify",
+          "payload": {
+            "action": "vol_up"
+          },
           "color": "#2ECC71",
           "icon": "volume_up"
         },
         {
           "id": "btn_sp_vol_down",
           "title": "Spotify Vol -",
-          "action_type": "hotkey",
-          "payload": { "keys": ["ctrl", "down"] },
+          "action_type": "spotify",
+          "payload": {
+            "action": "vol_down"
+          },
           "color": "#27AE60",
           "icon": "volume_down"
         },
@@ -746,7 +941,9 @@
           "id": "btn_sp_shuffle",
           "title": "Shuffle",
           "action_type": "spotify",
-          "payload": { "action": "shuffle" },
+          "payload": {
+            "action": "shuffle"
+          },
           "color": "#1DB954",
           "icon": "shuffle"
         },
@@ -754,7 +951,9 @@
           "id": "btn_sp_repeat",
           "title": "Repeat",
           "action_type": "spotify",
-          "payload": { "action": "repeat" },
+          "payload": {
+            "action": "repeat"
+          },
           "color": "#16A085",
           "icon": "repeat"
         },
@@ -762,7 +961,9 @@
           "id": "btn_sp_like",
           "title": "Like Song",
           "action_type": "spotify",
-          "payload": { "action": "like" },
+          "payload": {
+            "action": "like"
+          },
           "color": "#E74C3C",
           "icon": "favorite"
         },
@@ -770,7 +971,11 @@
           "id": "btn_sp_lofi",
           "title": "Lo-Fi Beats",
           "action_type": "spotify",
-          "payload": { "action": "playlist", "uri": "spotify:playlist:37i9dQZF1DXdLEN7aqioXM", "auto_play": true },
+          "payload": {
+            "action": "playlist",
+            "uri": "spotify:playlist:37i9dQZF1DXdLEN7aqioXM",
+            "auto_play": true
+          },
           "color": "#9B59B6",
           "icon": "spa"
         },
@@ -778,7 +983,11 @@
           "id": "btn_sp_tophits",
           "title": "Today's Hits",
           "action_type": "spotify",
-          "payload": { "action": "playlist", "uri": "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M", "auto_play": true },
+          "payload": {
+            "action": "playlist",
+            "uri": "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M",
+            "auto_play": true
+          },
           "color": "#F39C12",
           "icon": "trending_up"
         },
@@ -786,7 +995,11 @@
           "id": "btn_sp_focus",
           "title": "Deep Focus",
           "action_type": "spotify",
-          "payload": { "action": "playlist", "uri": "spotify:playlist:37i9dQZF1DWZeKCadgRdKQ", "auto_play": true },
+          "payload": {
+            "action": "playlist",
+            "uri": "spotify:playlist:37i9dQZF1DWZeKCadgRdKQ",
+            "auto_play": true
+          },
           "color": "#3498DB",
           "icon": "psychology"
         },
@@ -794,7 +1007,11 @@
           "id": "btn_sp_gaming",
           "title": "Bass Gaming",
           "action_type": "spotify",
-          "payload": { "action": "playlist", "uri": "spotify:playlist:37i9dQZF1DXdfOcg1KaUVg", "auto_play": true },
+          "payload": {
+            "action": "playlist",
+            "uri": "spotify:playlist:37i9dQZF1DXdfOcg1KaUVg",
+            "auto_play": true
+          },
           "color": "#E67E22",
           "icon": "sports_esports"
         },
@@ -802,15 +1019,21 @@
           "id": "btn_sp_liked",
           "title": "Liked Songs",
           "action_type": "spotify",
-          "payload": { "action": "playlist", "uri": "spotify:collection:tracks", "auto_play": true },
+          "payload": {
+            "action": "playlist",
+            "uri": "spotify:collection:tracks",
+            "auto_play": true
+          },
           "color": "#E74C3C",
           "icon": "favorite_border"
         },
         {
           "id": "btn_sp_open",
-          "title": "Launch Spotify",
-          "action_type": "spotify",
-          "payload": { "action": "open" },
+          "title": "Spotify",
+          "action_type": "app",
+          "payload": {
+            "target": "spotify"
+          },
           "color": "#1DB954",
           "icon": "music_note"
         },
@@ -818,7 +1041,9 @@
           "id": "btn_sp_close",
           "title": "Quit Spotify",
           "action_type": "spotify",
-          "payload": { "action": "close" },
+          "payload": {
+            "action": "close"
+          },
           "color": "#7F8C8D",
           "icon": "power_settings_new"
         }

@@ -113,16 +113,87 @@ MOUSEEVENTF_MIDDLEUP = 0x0040
 MOUSEEVENTF_WHEEL = 0x0800
 
 
+def ensure_interactive_desktop():
+    """Ensures the calling thread is attached to the active user input desktop."""
+    try:
+        user32 = ctypes.windll.user32
+        hdesk = user32.OpenInputDesktop(0, False, 0x01FF)
+        if not hdesk:
+            hdesk = user32.OpenDesktopW("Default", 0, False, 0x01FF)
+        if hdesk:
+            user32.SetThreadDesktop(hdesk)
+    except Exception:
+        pass
+
+
+def find_window_by_process_or_title(names: list[str], title_substrings: list[str]) -> int:
+    """Finds top-level window matching process name and/or title substrings on Default desktop."""
+    ensure_interactive_desktop()
+    user32 = ctypes.windll.user32
+    target_pids = set()
+    for p in psutil.process_iter(['pid', 'name']):
+        try:
+            pname = p.info.get('name', '').lower()
+            if any(n.lower() in pname for n in names):
+                target_pids.add(p.info['pid'])
+        except Exception:
+            pass
+
+    found_hwnd = 0
+    def enum_cb(hwnd, _):
+        nonlocal found_hwnd
+        if not user32.IsWindowVisible(hwnd):
+            return True
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if target_pids and pid.value not in target_pids:
+            return True
+        length = user32.GetWindowTextLengthW(hwnd)
+        buf = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(hwnd, buf, length + 1)
+        val = buf.value.lower()
+        if any(sub.lower() in val for sub in title_substrings):
+            found_hwnd = hwnd
+            return False
+        return True
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+    user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+    return found_hwnd
+
+
+def send_window_hotkey(hwnd: int, keys: list[str]) -> bool:
+    """Focuses the specified window briefly, sends hotkeys, and restores previous active window."""
+    ensure_interactive_desktop()
+    user32 = ctypes.windll.user32
+    prev_hwnd = user32.GetForegroundWindow()
+    try:
+        if hwnd and user32.IsWindow(hwnd):
+            user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+            user32.SetForegroundWindow(hwnd)
+            time.sleep(0.06)
+            execute_hotkey(keys)
+            time.sleep(0.06)
+            if prev_hwnd and prev_hwnd != hwnd and user32.IsWindow(prev_hwnd):
+                user32.SetForegroundWindow(prev_hwnd)
+            return True
+    except Exception as e:
+        logger.debug(f"send_window_hotkey exception: {e}")
+    return execute_hotkey(keys)
+
+
 def _send_key(vk_code: int, keyup: bool = False):
-    """Sends a single virtual key event via Windows keybd_event."""
+    """Sends a single virtual key event via Windows keybd_event with full scan code."""
+    ensure_interactive_desktop()
     flags = KEYEVENTF_KEYUP if keyup else KEYEVENTF_KEYDOWN
-    if vk_code in (0xB3, 0xB0, 0xB1, 0xB2, 0xAD, 0xAE, 0xAF, 0x5B, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, 0x2C):
+    if vk_code in (0xB3, 0xB0, 0xB1, 0xB2, 0xAD, 0xAE, 0xAF, 0x5B, 0x5C, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, 0x2C):
         flags |= KEYEVENTF_EXTENDEDKEY
-    ctypes.windll.user32.keybd_event(vk_code, 0, flags, 0)
+    scan = ctypes.windll.user32.MapVirtualKeyW(vk_code, 0)
+    ctypes.windll.user32.keybd_event(vk_code, scan, flags, 0)
 
 
 def press_media_key(action_name: str) -> bool:
-    """Triggers a native Windows media hardware key."""
+    """Triggers a native Windows media hardware key with scan code."""
     code = VK_CODES.get(action_name.lower())
     if not code:
         logger.warning(f"Unknown media action: {action_name}")
@@ -158,56 +229,52 @@ def key_up(key_name: str) -> bool:
 def press_special_key(key_name: str) -> bool:
     """
     Presses a single key (e.g. 'enter', 'esc', 'space', 'tab', 'a', 'A', '!', etc.).
-    Fully handles uppercase shifted letters, symbols, and Unicode fallbacks.
+    When modifiers (Ctrl, Alt, Win) are active, sends VK + scan code so shortcuts work.
+    When typing regular printable letters, uses KEYEVENTF_UNICODE for 100% reliability.
     """
     if not key_name:
         return False
 
-    # 1. Handle shifted symbols (e.g. '!', '@', '#', '{', etc.)
-    if key_name in SHIFT_SYMBOLS:
-        base_char = SHIFT_SYMBOLS[key_name]
-        base_code = VK_CODES.get(base_char)
-        if base_code is not None:
-            _send_key(0x10, keyup=False)  # Shift down
-            time.sleep(0.01)
-            _send_key(base_code, keyup=False)
-            time.sleep(0.01)
-            _send_key(base_code, keyup=True)
-            time.sleep(0.01)
-            _send_key(0x10, keyup=True)   # Shift up
+    ensure_interactive_desktop()
+    clean_k = key_name.lower().strip()
+
+    # Check if a modifier key is physically held down right now
+    user32 = ctypes.windll.user32
+    ctrl_held = bool(user32.GetAsyncKeyState(0x11) & 0x8000)
+    alt_held = bool(user32.GetAsyncKeyState(0x12) & 0x8000)
+    win_held = bool(user32.GetAsyncKeyState(0x5B) & 0x8000 or user32.GetAsyncKeyState(0x5C) & 0x8000)
+    has_active_modifier = ctrl_held or alt_held or win_held
+
+    # 1. If modifier is held, send as virtual key code (e.g. Ctrl + C)
+    if has_active_modifier:
+        code = VK_CODES.get(clean_k)
+        if code is not None:
+            _send_key(code, keyup=False)
+            time.sleep(0.015)
+            _send_key(code, keyup=True)
             return True
 
-    # 2. Handle uppercase single letters (e.g. 'A', 'Z')
-    if len(key_name) == 1 and key_name.isupper() and key_name.lower() in VK_CODES:
-        base_code = VK_CODES[key_name.lower()]
-        _send_key(0x10, keyup=False)  # Shift down
-        time.sleep(0.01)
-        _send_key(base_code, keyup=False)
-        time.sleep(0.01)
-        _send_key(base_code, keyup=True)
-        time.sleep(0.01)
-        _send_key(0x10, keyup=True)   # Shift up
-        return True
-
-    # 3. Direct VK lookup (case-insensitive for named keys like 'enter', 'tab', 'space', or 'a')
-    clean_k = key_name.lower().strip()
-    code = VK_CODES.get(clean_k)
-    if code is not None:
+    # 2. Control & Navigation named keys
+    control_keys = {
+        "enter": 0x0D, "return": 0x0D, "backspace": 0x08, "tab": 0x09,
+        "esc": 0x1B, "escape": 0x1B, "delete": 0x2E, "del": 0x2E,
+        "insert": 0x2D, "ins": 0x2D, "up": 0x26, "down": 0x28,
+        "left": 0x25, "right": 0x27, "home": 0x24, "end": 0x23,
+        "pageup": 0x21, "pgup": 0x21, "pagedown": 0x22, "pgdn": 0x22,
+        "capslock": 0x14, "caps": 0x14, "numlock": 0x90, "scrolllock": 0x91,
+        "space": 0x20, "printscreen": 0x2C, "prtsc": 0x2C,
+        "f1": 0x70, "f2": 0x71, "f3": 0x72, "f4": 0x73, "f5": 0x74, "f6": 0x75,
+        "f7": 0x76, "f8": 0x77, "f9": 0x78, "f10": 0x79, "f11": 0x7A, "f12": 0x7B,
+    }
+    if clean_k in control_keys:
+        code = control_keys[clean_k]
         _send_key(code, keyup=False)
         time.sleep(0.015)
         _send_key(code, keyup=True)
         return True
 
-    # 4. Fallback to hardware keybd_event Unicode scan for arbitrary characters
-    if len(key_name) == 1:
-        char_code = ord(key_name)
-        ctypes.windll.user32.keybd_event(0, char_code, KEYEVENTF_UNICODE, 0)
-        time.sleep(0.01)
-        ctypes.windll.user32.keybd_event(0, char_code, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, 0)
-        return True
-
-    logger.warning(f"Unknown special key: {key_name}")
-    return False
+    # 3. For any regular character/letter/symbol when no modifiers: use type_text
+    return type_text(key_name)
 
 
 def execute_hotkey(keys: list[str]) -> bool:
@@ -268,11 +335,24 @@ def type_text(text: str) -> bool:
         return False
 
 
-# Trackpad & Mouse simulation
+# Trackpad & Mouse simulation with Sub-Pixel Accumulator
+_accum_dx = 0.0
+_accum_dy = 0.0
+_accum_scroll = 0.0
+
 def mouse_move(dx: float, dy: float) -> bool:
-    """Relative cursor delta movement."""
+    """Relative cursor delta movement with sub-pixel accumulator."""
+    global _accum_dx, _accum_dy
     try:
-        ctypes.windll.user32.mouse_event(MOUSEEVENTF_MOVE, int(dx), int(dy), 0, 0)
+        ensure_interactive_desktop()
+        _accum_dx += dx
+        _accum_dy += dy
+        mx = int(_accum_dx)
+        my = int(_accum_dy)
+        if mx != 0 or my != 0:
+            _accum_dx -= mx
+            _accum_dy -= my
+            ctypes.windll.user32.mouse_event(MOUSEEVENTF_MOVE, mx, my, 0, 0)
         return True
     except Exception as e:
         logger.error(f"mouse_move failed: {e}")
@@ -283,19 +363,24 @@ def mouse_click(button: str = "left", double: bool = False) -> bool:
     """Triggers mouse button click (left, right, middle)."""
     btn = button.lower().strip()
     try:
+        ensure_interactive_desktop()
         user32 = ctypes.windll.user32
         if btn == "left":
             user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+            time.sleep(0.012)
             user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
             if double:
-                time.sleep(0.05)
+                time.sleep(0.06)
                 user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                time.sleep(0.012)
                 user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         elif btn == "right":
             user32.mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+            time.sleep(0.012)
             user32.mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
         elif btn == "middle":
             user32.mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, 0)
+            time.sleep(0.012)
             user32.mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, 0)
         return True
     except Exception as e:
@@ -304,11 +389,15 @@ def mouse_click(button: str = "left", double: bool = False) -> bool:
 
 
 def mouse_scroll(dy: float) -> bool:
-    """Scrolls vertical mouse wheel."""
+    """Scrolls vertical mouse wheel with sub-pixel accumulator."""
+    global _accum_scroll
     try:
-        # Wheel delta is standard 120 per notch
-        wheel_amount = int(dy * 120)
-        ctypes.windll.user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, wheel_amount, 0)
+        ensure_interactive_desktop()
+        _accum_scroll += (dy * 120.0)
+        amt = int(_accum_scroll)
+        if amt != 0:
+            _accum_scroll -= amt
+            ctypes.windll.user32.mouse_event(MOUSEEVENTF_WHEEL, 0, 0, amt, 0)
         return True
     except Exception as e:
         logger.error(f"mouse_scroll failed: {e}")
@@ -634,20 +723,25 @@ def sleep_pc() -> bool:
 
 
 def change_brightness(delta: int) -> bool:
-    """Adjusts display brightness by delta percentage (-100 to +100) using WMI."""
+    """Adjusts display brightness by delta percentage (-100 to +100)."""
     logger.info(f"Adjusting brightness by {delta:+d}%...")
     try:
-        cmd_get = '(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightness).CurrentBrightness'
-        out = subprocess.check_output(['powershell', '-NoProfile', '-Command', cmd_get], text=True).strip()
-        curr = int(out)
-        target = max(10, min(100, curr + delta))
-        cmd_set = f'(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, {target})'
-        subprocess.run(['powershell', '-NoProfile', '-Command', cmd_set], check=True)
-        logger.info(f"Brightness changed from {curr}% to {target}%")
+        import screen_brightness_control as sbc
+        curr = sbc.get_brightness()
+        val = curr[0] if isinstance(curr, list) and curr else (curr if isinstance(curr, int) else 50)
+        target = max(5, min(100, val + delta))
+        sbc.set_brightness(target)
+        logger.info(f"Brightness successfully adjusted from {val}% to {target}%")
         return True
     except Exception as e:
-        logger.error(f"Failed to change brightness: {e}")
-        return False
+        logger.warning(f"screen_brightness_control failed: {e}, falling back to WMI...")
+        try:
+            cmd = f'$b = (Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightness).CurrentBrightness; $t = [Math]::Max(10, [Math]::Min(100, $b + ({delta}))); (Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, $t)'
+            subprocess.Popen(['powershell', '-NoProfile', '-NonInteractive', '-Command', cmd], shell=True)
+            return True
+        except Exception as e2:
+            logger.error(f"WMI brightness fallback failed: {e2}")
+            return False
 
 
 def shutdown_pc() -> bool:
@@ -672,6 +766,73 @@ def restart_pc() -> bool:
         return False
 
 
+def find_spotify_window() -> int:
+    """Finds active Spotify main window handle even when displaying song titles."""
+    ensure_interactive_desktop()
+    user32 = ctypes.windll.user32
+    sp_pids = set()
+    for p in psutil.process_iter(['pid', 'name']):
+        try:
+            if 'spotify' in p.info.get('name', '').lower():
+                sp_pids.add(p.info['pid'])
+        except Exception:
+            pass
+
+    found = 0
+    def enum_cb(hwnd, _):
+        nonlocal found
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value in sp_pids:
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length > 0:
+                buf = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buf, length + 1)
+                t = buf.value
+                if not any(skip in t for skip in ['GDI+', 'MSCTFIME', 'Default IME']):
+                    found = hwnd
+                    return False
+        return True
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+    user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+    return found
+
+
+def find_discord_window() -> int:
+    """Finds active Discord window handle (supporting Discord, DiscordPTB, Canary)."""
+    ensure_interactive_desktop()
+    user32 = ctypes.windll.user32
+    dc_pids = set()
+    for p in psutil.process_iter(['pid', 'name']):
+        try:
+            pname = p.info.get('name', '').lower()
+            if any(n in pname for n in ['discord', 'discordptb', 'discordcanary']):
+                dc_pids.add(p.info['pid'])
+        except Exception:
+            pass
+
+    found = 0
+    def enum_cb(hwnd, _):
+        nonlocal found
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value in dc_pids:
+            length = user32.GetWindowTextLengthW(hwnd)
+            if length > 0:
+                buf = ctypes.create_unicode_buffer(length + 1)
+                user32.GetWindowTextW(hwnd, buf, length + 1)
+                t = buf.value
+                if not any(skip in t.lower() for skip in ['overlay', 'gdi+', 'ime', 'dde']):
+                    found = hwnd
+                    return False
+        return True
+
+    WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+    user32.EnumWindows(WNDENUMPROC(enum_cb), 0)
+    return found
+
+
 def execute_spotify_action(action: str, payload: dict | None = None) -> bool:
     """Executes a specialized Spotify desktop action on Windows."""
     if payload is None:
@@ -679,7 +840,35 @@ def execute_spotify_action(action: str, payload: dict | None = None) -> bool:
     act = action.lower().strip()
     logger.info(f"Executing Spotify action: {act} with payload: {payload}")
     try:
-        if act in ("play_uri", "playlist", "track", "album"):
+        sp_hwnd = find_spotify_window()
+        WM_APPCOMMAND = 0x0319
+
+        if act == "play_pause":
+            if sp_hwnd:
+                ctypes.windll.user32.SendMessageW(sp_hwnd, WM_APPCOMMAND, 0, (14 << 16))
+            press_media_key("media_play_pause")
+            return True
+        elif act == "next":
+            if sp_hwnd:
+                ctypes.windll.user32.SendMessageW(sp_hwnd, WM_APPCOMMAND, 0, (11 << 16))
+            press_media_key("media_next")
+            return True
+        elif act == "prev":
+            if sp_hwnd:
+                ctypes.windll.user32.SendMessageW(sp_hwnd, WM_APPCOMMAND, 0, (12 << 16))
+            press_media_key("media_prev")
+            return True
+        elif act in ("vol_up", "volume_up"):
+            return send_window_hotkey(sp_hwnd, ["ctrl", "up"])
+        elif act in ("vol_down", "volume_down"):
+            return send_window_hotkey(sp_hwnd, ["ctrl", "down"])
+        elif act == "shuffle":
+            return send_window_hotkey(sp_hwnd, ["ctrl", "s"])
+        elif act == "repeat":
+            return send_window_hotkey(sp_hwnd, ["ctrl", "r"])
+        elif act == "like":
+            return send_window_hotkey(sp_hwnd, ["alt", "shift", "b"])
+        elif act in ("play_uri", "playlist", "track", "album"):
             uri = payload.get("uri", "").strip()
             if not uri:
                 return False
@@ -692,26 +881,18 @@ def execute_spotify_action(action: str, payload: dict | None = None) -> bool:
                     pass
             logger.info(f"Opening Spotify URI: {uri}")
             os.startfile(uri)
-            if payload.get("shuffle", False):
-                time.sleep(0.6)
-                execute_hotkey(["ctrl", "s"])
             if payload.get("auto_play", True):
-                time.sleep(0.6)
-                press_media_key("media_play_pause")
+                time.sleep(0.8)
+                if sp_hwnd:
+                    ctypes.windll.user32.SendMessageW(sp_hwnd, WM_APPCOMMAND, 0, (14 << 16))
+                else:
+                    press_media_key("media_play_pause")
             return True
-        elif act == "shuffle":
-            return execute_hotkey(["ctrl", "s"])
-        elif act == "repeat":
-            return execute_hotkey(["ctrl", "r"])
-        elif act == "play_pause":
-            return press_media_key("media_play_pause")
-        elif act == "next":
-            return press_media_key("media_next")
-        elif act == "prev":
-            return press_media_key("media_prev")
-        elif act == "like":
-            return execute_hotkey(["alt", "shift", "b"])
         elif act == "open":
+            if sp_hwnd:
+                ctypes.windll.user32.ShowWindow(sp_hwnd, 9)
+                ctypes.windll.user32.SetForegroundWindow(sp_hwnd)
+                return True
             os.startfile("spotify:")
             return True
         elif act == "close":
@@ -732,7 +913,24 @@ def execute_discord_action(action: str, payload: dict | None = None) -> bool:
     act = action.lower().strip()
     logger.info(f"Executing Discord action: {act} with payload: {payload}")
     try:
-        if act in ("join_voice", "open_channel", "channel"):
+        dc_hwnd = find_discord_window()
+        if act in ("toggle_mute", "mute", "unmute"):
+            # 1. Hardware-level Windows Core Audio mic mute (100% guarantee)
+            toggle_mic_mute()
+            # 2. Also send Ctrl+Shift+M to Discord window to toggle Discord's own mute UI
+            send_window_hotkey(dc_hwnd, ["ctrl", "shift", "m"])
+            return True
+        elif act in ("toggle_deafen", "deafen", "undeafen"):
+            return send_window_hotkey(dc_hwnd, ["ctrl", "shift", "d"])
+        elif act in ("screenshare", "screen_share"):
+            return send_window_hotkey(dc_hwnd, ["alt", "shift", "s"])
+        elif act in ("push_to_talk", "ptt"):
+            return send_window_hotkey(dc_hwnd, ["ctrl", "shift", "t"])
+        elif act in ("accept_call", "call", "answer_call"):
+            return send_window_hotkey(dc_hwnd, ["ctrl", "enter"])
+        elif act in ("decline_call", "end_call", "disconnect"):
+            return send_window_hotkey(dc_hwnd, ["esc"])
+        elif act in ("join_voice", "open_channel", "channel"):
             url = payload.get("channel_url", "").strip()
             if not url:
                 return False
@@ -747,25 +945,16 @@ def execute_discord_action(action: str, payload: dict | None = None) -> bool:
             logger.info(f"Opening Discord channel: {url}")
             os.startfile(url)
             return True
-        elif act in ("toggle_mute", "mute", "unmute"):
-            execute_hotkey(["ctrl", "shift", "m"])
-            toggle_mic_mute()
-            return True
-        elif act in ("toggle_deafen", "deafen", "undeafen"):
-            return execute_hotkey(["ctrl", "shift", "d"])
-        elif act in ("screenshare", "screen_share"):
-            return execute_hotkey(["alt", "shift", "s"])
-        elif act in ("push_to_talk", "ptt"):
-            return execute_hotkey(["ctrl", "shift", "t"])
-        elif act in ("accept_call", "call", "answer_call"):
-            return execute_hotkey(["ctrl", "enter"])
-        elif act in ("decline_call", "end_call", "disconnect"):
-            return execute_hotkey(["esc"])
         elif act == "open":
+            if dc_hwnd:
+                ctypes.windll.user32.ShowWindow(dc_hwnd, 9)
+                ctypes.windll.user32.SetForegroundWindow(dc_hwnd)
+                return True
             os.startfile("discord:")
             return True
         elif act == "close":
-            subprocess.Popen("taskkill /im discord.exe", shell=True)
+            subprocess.Popen("taskkill /f /im discord.exe", shell=True)
+            subprocess.Popen("taskkill /f /im discordptb.exe", shell=True)
             return True
         else:
             logger.warning(f"Unknown Discord action: {act}")

@@ -334,7 +334,7 @@ class ConnectionService extends ChangeNotifier {
         }
         if (data.containsKey('apps')) {
           final rawApps = (data['apps'] as List<dynamic>?) ?? [];
-          installedApps = rawApps.map((a) => {
+          installedApps = rawApps.map((a) => <String, String>{
             'name': (a['name'] ?? '').toString(),
             'target': (a['target'] ?? '').toString(),
           }).toList();
@@ -372,7 +372,7 @@ class ConnectionService extends ChangeNotifier {
       } else if (type == 'APPS_DATA') {
         if (data.containsKey('apps')) {
           final rawApps = (data['apps'] as List<dynamic>?) ?? [];
-          installedApps = rawApps.map((a) => {
+          installedApps = rawApps.map((a) => <String, String>{
             'name': (a['name'] ?? '').toString(),
             'target': (a['target'] ?? '').toString(),
           }).toList();
