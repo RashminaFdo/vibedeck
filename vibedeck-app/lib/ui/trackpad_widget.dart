@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/connection_service.dart';
 import '../theme/vibe_theme.dart';
 
@@ -17,29 +18,32 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
     return Column(
       children: [
         // Quick control header (Sensitivity + Status)
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          height: isLandscape ? 26 : 38,
+          padding: EdgeInsets.symmetric(horizontal: isLandscape ? 10 : 16, vertical: isLandscape ? 1 : 6),
           color: VibeTheme.surfaceHighlight.withOpacity(0.3),
           child: Row(
             children: [
-              const Icon(Icons.touch_app_rounded, color: VibeTheme.cyanNeon, size: 18),
-              const SizedBox(width: 8),
-              const Text(
+              Icon(Icons.touch_app_rounded, color: VibeTheme.cyanNeon, size: isLandscape ? 15 : 18),
+              const SizedBox(width: 6),
+              Text(
                 "Touchpad Remote",
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70),
+                style: TextStyle(fontSize: isLandscape ? 10.5 : 12, fontWeight: FontWeight.bold, color: Colors.white70),
               ),
               const Spacer(),
-              const Text("Speed:", style: TextStyle(fontSize: 10.5, color: Colors.grey)),
+              Text("Speed:", style: TextStyle(fontSize: isLandscape ? 9.5 : 10.5, color: Colors.grey)),
               SizedBox(
-                width: 110,
+                width: isLandscape ? 85 : 110,
                 child: SliderTheme(
                   data: SliderTheme.of(context).copyWith(
                     trackHeight: 2,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                    thumbShape: RoundSliderThumbShape(enabledThumbRadius: isLandscape ? 4 : 5),
+                    overlayShape: RoundSliderOverlayShape(overlayRadius: isLandscape ? 8 : 10),
                     activeTrackColor: VibeTheme.cyanNeon,
                     thumbColor: VibeTheme.cyanNeon,
                   ),
@@ -55,10 +59,10 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
           ),
         ),
 
-        // Main Trackpad Surface + Scroll Strip
+        // Main Trackpad Surface + Scroll Strip (Expands to fill full available space)
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+            padding: EdgeInsets.fromLTRB(8, isLandscape ? 4 : 8, 8, isLandscape ? 4 : 8),
             child: Row(
               children: [
                 // 1. Touchpad Main Canvas
@@ -86,33 +90,39 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                           _conn.sendTrackpadMove(dx, dy);
                         },
                         onTap: () {
+                          HapticFeedback.lightImpact();
                           _conn.sendMouseClick('left');
                         },
                         onDoubleTap: () {
+                          HapticFeedback.mediumImpact();
                           _conn.sendMouseClick('left', doubleClick: true);
                         },
                         onLongPress: () {
+                          HapticFeedback.mediumImpact();
                           _conn.sendMouseClick('right');
                         },
                         child: Stack(
                           children: [
-                            // Subtle background grid guide
+                            // Subtle background guide
                             Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     Icons.mouse_rounded,
-                                    size: 40,
+                                    size: isLandscape ? 28 : 40,
                                     color: Colors.white.withOpacity(0.08),
                                   ),
-                                  const SizedBox(height: 6),
+                                  const SizedBox(height: 4),
                                   Text(
-                                    "Tap = Left Click  •  2-Tap / Long Press = Right Click\nDouble Tap = Double Click",
+                                    isLandscape
+                                        ? "Tap = Left Click  •  2-Tap = Right Click  •  Double Tap = Double Click"
+                                        : "Tap = Left Click  •  2-Tap / Long Press = Right Click\nDouble Tap = Double Click",
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: Colors.white.withOpacity(0.22),
-                                      fontSize: 10.5,
+                                      fontSize: isLandscape ? 9.5 : 10.5,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -128,9 +138,9 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
 
                 const SizedBox(width: 8),
 
-                // 2. Vertical Scroll Strip
+                // 2. Vertical Scroll Strip (FittedBox & Overflow-Proof)
                 Container(
-                  width: 44,
+                  width: isLandscape ? 38 : 44,
                   decoration: BoxDecoration(
                     color: const Color(0xFF121420),
                     borderRadius: BorderRadius.circular(14),
@@ -141,34 +151,48 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onPanUpdate: (details) {
-                        // Scroll inverted naturally (dragging down scrolls down on page)
                         final dy = -details.delta.dy * 0.08;
                         _conn.sendMouseScroll(dy);
                       },
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: const Icon(Icons.arrow_drop_up_rounded, color: VibeTheme.blueNeon, size: 24),
-                          ),
-                          RotatedBox(
-                            quarterTurns: 3,
-                            child: Text(
-                              "SCROLL",
-                              style: TextStyle(
-                                color: VibeTheme.blueNeon.withOpacity(0.5),
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 2,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final stripH = constraints.maxHeight;
+                          return FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: SizedBox(
+                              height: stripH,
+                              width: isLandscape ? 38 : 44,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Icon(Icons.arrow_drop_up_rounded, color: VibeTheme.blueNeon, size: isLandscape ? 20 : 24),
+                                  ),
+                                  if (stripH > 130)
+                                    RotatedBox(
+                                      quarterTurns: 3,
+                                      child: Text(
+                                        "SCROLL",
+                                        style: TextStyle(
+                                          color: VibeTheme.blueNeon.withOpacity(0.5),
+                                          fontSize: 9.0,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 2,
+                                        ),
+                                      ),
+                                    )
+                                  else
+                                    Icon(Icons.unfold_more_rounded, color: VibeTheme.blueNeon.withOpacity(0.4), size: 16),
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 4),
+                                    child: Icon(Icons.arrow_drop_down_rounded, color: VibeTheme.blueNeon, size: isLandscape ? 20 : 24),
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: const Icon(Icons.arrow_drop_down_rounded, color: VibeTheme.blueNeon, size: 24),
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -180,14 +204,17 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
 
         // Mouse Buttons (Left, Middle, Right Click)
         Padding(
-          padding: EdgeInsets.fromLTRB(10, 0, 10, MediaQuery.of(context).orientation == Orientation.landscape ? 4 : 8),
+          padding: EdgeInsets.fromLTRB(8, 0, 8, isLandscape ? 4 : 8),
           child: Row(
             children: [
               // Left Click Pad
               Expanded(
                 flex: 3,
                 child: GestureDetector(
-                  onTapDown: (_) => setState(() => _isClickPressed = true),
+                  onTapDown: (_) {
+                    HapticFeedback.lightImpact();
+                    setState(() => _isClickPressed = true);
+                  },
                   onTapUp: (_) {
                     setState(() => _isClickPressed = false);
                     _conn.sendMouseClick('left');
@@ -195,7 +222,7 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                   onTapCancel: () => setState(() => _isClickPressed = false),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 70),
-                    height: MediaQuery.of(context).orientation == Orientation.landscape ? 40 : 50,
+                    height: isLandscape ? 34 : 50,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       gradient: LinearGradient(
@@ -208,13 +235,13 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                         width: _isClickPressed ? 1.8 : 1.0,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.crop_square_rounded, size: 15, color: Colors.white70),
-                          SizedBox(width: 6),
-                          Text("LEFT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5)),
+                          Icon(Icons.crop_square_rounded, size: isLandscape ? 13 : 15, color: Colors.white70),
+                          const SizedBox(width: 5),
+                          Text("LEFT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: isLandscape ? 10.5 : 11.5)),
                         ],
                       ),
                     ),
@@ -222,32 +249,38 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
 
               // Middle Click Pad
               GestureDetector(
-                onTap: () => _conn.sendMouseClick('middle'),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _conn.sendMouseClick('middle');
+                },
                 child: Container(
-                  height: MediaQuery.of(context).orientation == Orientation.landscape ? 40 : 50,
-                  width: MediaQuery.of(context).orientation == Orientation.landscape ? 44 : 54,
+                  height: isLandscape ? 34 : 50,
+                  width: isLandscape ? 38 : 50,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     color: const Color(0xFF181A26),
                     border: Border.all(color: Colors.white12, width: 1),
                   ),
-                  child: const Center(
-                    child: Icon(Icons.circle_outlined, size: 16, color: Colors.white60),
+                  child: Center(
+                    child: Icon(Icons.circle_outlined, size: isLandscape ? 14 : 16, color: Colors.white60),
                   ),
                 ),
               ),
 
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
 
               // Right Click Pad
               Expanded(
                 flex: 3,
                 child: GestureDetector(
-                  onTapDown: (_) => setState(() => _isRightClickPressed = true),
+                  onTapDown: (_) {
+                    HapticFeedback.lightImpact();
+                    setState(() => _isRightClickPressed = true);
+                  },
                   onTapUp: (_) {
                     setState(() => _isRightClickPressed = false);
                     _conn.sendMouseClick('right');
@@ -255,7 +288,7 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                   onTapCancel: () => setState(() => _isRightClickPressed = false),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 70),
-                    height: MediaQuery.of(context).orientation == Orientation.landscape ? 40 : 50,
+                    height: isLandscape ? 34 : 50,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       gradient: LinearGradient(
@@ -268,13 +301,13 @@ class _TrackpadWidgetState extends State<TrackpadWidget> {
                         width: _isRightClickPressed ? 1.8 : 1.0,
                       ),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.crop_portrait_rounded, size: 15, color: Colors.white70),
-                          SizedBox(width: 6),
-                          Text("RIGHT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11.5)),
+                          Icon(Icons.crop_portrait_rounded, size: isLandscape ? 13 : 15, color: Colors.white70),
+                          const SizedBox(width: 5),
+                          Text("RIGHT CLICK", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: isLandscape ? 10.5 : 11.5)),
                         ],
                       ),
                     ),

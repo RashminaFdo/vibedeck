@@ -183,15 +183,15 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
       backgroundColor: const Color(0xFF131622),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       insetPadding: EdgeInsets.symmetric(
-        horizontal: isLandscape ? 20 : 14,
-        vertical: isLandscape ? 10 : 18,
+        horizontal: isLandscape ? 16 : 14,
+        vertical: isLandscape ? 6 : 18,
       ),
       child: Container(
         width: isLandscape ? 640 : 480,
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height * 0.94,
+          maxHeight: MediaQuery.sizeOf(context).height * (isLandscape ? 0.90 : 0.94),
         ),
-        padding: EdgeInsets.all(isLandscape ? 14 : 18),
+        padding: EdgeInsets.all(isLandscape ? 10 : 18),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

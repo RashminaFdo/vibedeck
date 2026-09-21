@@ -92,6 +92,7 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
     VoidCallback? customTap,
     bool isActive = false,
   }) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
     final displayLabel = _isShifted
         ? (subLabel ?? (isLetter ? label.toUpperCase() : label))
         : (_isCapsLock && isLetter ? label.toUpperCase() : label);
@@ -99,11 +100,14 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
     return Expanded(
       flex: flex,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 1.5, vertical: 2.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: isLandscape ? 1.0 : 1.5,
+          vertical: isLandscape ? 1.0 : 2.0,
+        ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(isLandscape ? 4 : 6),
             onTap: () {
               if (customTap != null) {
                 customTap();
@@ -118,7 +122,7 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 120),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(6),
+                borderRadius: BorderRadius.circular(isLandscape ? 4 : 6),
                 color: isActive
                     ? VibeTheme.cyanNeon.withOpacity(0.3)
                     : (bgColor ?? const Color(0xFF161926)),
@@ -132,7 +136,7 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                     ? [
                         BoxShadow(
                           color: VibeTheme.cyanNeon.withOpacity(0.4),
-                          blurRadius: 8,
+                          blurRadius: 6,
                           spreadRadius: 1,
                         )
                       ]
@@ -140,54 +144,63 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                         BoxShadow(
                           color: Colors.black.withOpacity(0.35),
                           blurRadius: 2,
-                          offset: const Offset(0, 1.5),
+                          offset: const Offset(0, 1),
                         )
                       ],
               ),
               child: Center(
-                child: icon != null
-                    ? Icon(
-                        icon,
-                        size: 16,
-                        color: textColor ?? Colors.white,
-                      )
-                    : subLabel != null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                subLabel,
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  color: _isShifted
-                                      ? VibeTheme.cyanNeon
-                                      : Colors.grey.shade500,
-                                  fontWeight: _isShifted
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                              Text(
-                                label,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: !_isShifted
-                                      ? (textColor ?? Colors.white)
-                                      : Colors.grey.shade400,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 2.0),
+                    child: icon != null
+                        ? Icon(
+                            icon,
+                            size: isLandscape ? 14 : 16,
+                            color: textColor ?? Colors.white,
                           )
-                        : Text(
-                            displayLabel,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: isLetter ? 13 : 11,
-                              fontWeight: FontWeight.bold,
-                              color: textColor ?? Colors.white,
-                            ),
-                          ),
+                        : subLabel != null
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    subLabel,
+                                    style: TextStyle(
+                                      fontSize: isLandscape ? 7.5 : 8.5,
+                                      color: _isShifted
+                                          ? VibeTheme.cyanNeon
+                                          : Colors.grey.shade500,
+                                      fontWeight: _isShifted
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                  Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontSize: isLandscape ? 10.5 : 12,
+                                      color: !_isShifted
+                                          ? (textColor ?? Colors.white)
+                                          : Colors.grey.shade400,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Text(
+                                displayLabel,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: isLetter
+                                      ? (isLandscape ? 11.5 : 13)
+                                      : (isLandscape ? 9.5 : 11),
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor ?? Colors.white,
+                                ),
+                              ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -199,14 +212,13 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
   @override
   Widget build(BuildContext context) {
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
-    final rowHeight = isLandscape ? 38.0 : 42.0;
 
     return Column(
       children: [
         // Top Toolbar Ribbon: Quick Actions + Dictation Toggle + Status
         Container(
-          height: 36,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          height: isLandscape ? 28 : 36,
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: isLandscape ? 2 : 3),
           color: const Color(0xFF0F111A),
           child: Row(
             children: [
@@ -215,7 +227,7 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                 onTap: () => setState(() => _showFnRow = !_showFnRow),
                 borderRadius: BorderRadius.circular(6),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: EdgeInsets.symmetric(horizontal: isLandscape ? 6 : 8, vertical: isLandscape ? 2 : 3),
                   decoration: BoxDecoration(
                     color: _showFnRow ? VibeTheme.purpleNeon.withOpacity(0.25) : Colors.white10,
                     borderRadius: BorderRadius.circular(6),
@@ -228,14 +240,14 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                     children: [
                       Icon(
                         _showFnRow ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
-                        size: 14,
+                        size: isLandscape ? 12 : 14,
                         color: _showFnRow ? VibeTheme.purpleNeon : Colors.white70,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         "F1-F12",
                         style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: isLandscape ? 9.5 : 10.5,
                           fontWeight: FontWeight.bold,
                           color: _showFnRow ? Colors.white : Colors.white70,
                         ),
@@ -251,7 +263,7 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                 onTap: () => setState(() => _showTextBar = !_showTextBar),
                 borderRadius: BorderRadius.circular(6),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: EdgeInsets.symmetric(horizontal: isLandscape ? 6 : 8, vertical: isLandscape ? 2 : 3),
                   decoration: BoxDecoration(
                     color: _showTextBar ? VibeTheme.cyanNeon.withOpacity(0.25) : Colors.white10,
                     borderRadius: BorderRadius.circular(6),
@@ -259,12 +271,12 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                       color: _showTextBar ? VibeTheme.cyanNeon : Colors.white24,
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.text_fields_rounded, size: 13, color: VibeTheme.cyanNeon),
-                      SizedBox(width: 4),
-                      Text("Paste / Dictate", style: TextStyle(fontSize: 10.5, color: Colors.white)),
+                      Icon(Icons.text_fields_rounded, size: isLandscape ? 12 : 13, color: VibeTheme.cyanNeon),
+                      const SizedBox(width: 4),
+                      Text("Dictate", style: TextStyle(fontSize: isLandscape ? 9.5 : 10.5, color: Colors.white)),
                     ],
                   ),
                 ),
@@ -274,7 +286,6 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
 
               // Quick Hotkey Shortcuts: Copy, Paste, Undo
               _buildTopQuickAction("COPY", () {
-                _conn.sendKeyPress("c"); // or combo
                 _conn.sendKeyDown("ctrl");
                 _conn.sendKeyPress("c");
                 _conn.sendKeyUp("ctrl");
@@ -298,34 +309,34 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
         // Optional Collapsible Dictation / Long Text Input Bar
         if (_showTextBar)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             color: const Color(0xFF131622),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _dictationCtrl,
-                    style: const TextStyle(fontSize: 13, color: Colors.white),
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
                     decoration: InputDecoration(
                       hintText: "Dictate or paste text here to send all at once...",
-                      hintStyle: TextStyle(fontSize: 11.5, color: Colors.white.withOpacity(0.35)),
+                      hintStyle: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.35)),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       filled: true,
                       fillColor: const Color(0xFF1C2030),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
                         borderSide: BorderSide(color: VibeTheme.cyanNeon.withOpacity(0.4)),
                       ),
                     ),
                     onSubmitted: (_) => _sendDictatedText(),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
                 IconButton(
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                  icon: const Icon(Icons.send_rounded, color: VibeTheme.cyanNeon, size: 18),
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  icon: const Icon(Icons.send_rounded, color: VibeTheme.cyanNeon, size: 16),
                   tooltip: "Send Text to PC",
                   onPressed: _sendDictatedText,
                 ),
@@ -333,17 +344,17 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
             ),
           ),
 
-        // Keyboard Surface
+        // Keyboard Surface: ALL ROWS ARE Expanded! Zero overflow possible!
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: isLandscape ? 2 : 4, vertical: isLandscape ? 2 : 4),
             color: const Color(0xFF0C0E14),
             child: Column(
               children: [
                 // Optional Function Row: ESC, F1-F12, PRTSC, DEL
                 if (_showFnRow)
-                  SizedBox(
-                    height: rowHeight * 0.85,
+                  Expanded(
+                    flex: 8,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -367,8 +378,8 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                   ),
 
                 // Row 1: ` 1 2 3 4 5 6 7 8 9 0 - = Backspace
-                SizedBox(
-                  height: rowHeight,
+                Expanded(
+                  flex: 10,
                   child: Row(
                     children: [
                       _buildKey(label: "`", subLabel: "~", shiftKey: "~", flex: 9),
@@ -396,8 +407,8 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                 ),
 
                 // Row 2: Tab, Q W E R T Y U I O P [ ] \
-                SizedBox(
-                  height: rowHeight,
+                Expanded(
+                  flex: 10,
                   child: Row(
                     children: [
                       _buildKey(label: "Tab", keyName: "tab", flex: 13, bgColor: const Color(0xFF1D2132)),
@@ -419,8 +430,8 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                 ),
 
                 // Row 3: Caps, A S D F G H J K L ; ' Enter
-                SizedBox(
-                  height: rowHeight,
+                Expanded(
+                  flex: 10,
                   child: Row(
                     children: [
                       _buildKey(
@@ -457,8 +468,8 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                 ),
 
                 // Row 4: Shift, Z X C V B N M , . / Shift
-                SizedBox(
-                  height: rowHeight,
+                Expanded(
+                  flex: 10,
                   child: Row(
                     children: [
                       _buildKey(
@@ -496,8 +507,8 @@ class _KeyboardRemoteWidgetState extends State<KeyboardRemoteWidget> {
                 ),
 
                 // Row 5: Ctrl, Win, Alt, Space, Alt, Nav Arrows (◀ ▲ ▼ ▶)
-                SizedBox(
-                  height: rowHeight,
+                Expanded(
+                  flex: 10,
                   child: Row(
                     children: [
                       _buildKey(

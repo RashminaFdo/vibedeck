@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/deck_action.dart';
 import '../services/connection_service.dart';
 
@@ -93,51 +94,62 @@ class _DeckButtonWidgetState extends State<DeckButtonWidget> {
             final innerPad = (minDim * 0.07).clamp(4.0, 10.0);
 
             return GestureDetector(
-              onTapDown: (_) => setState(() => _isPressed = true),
+              onTapDown: (_) {
+                HapticFeedback.lightImpact();
+                setState(() => _isPressed = true);
+              },
               onTapUp: (_) => setState(() => _isPressed = false),
               onTapCancel: () => setState(() => _isPressed = false),
               onTap: widget.onTap,
               onLongPress: widget.onLongPress,
               child: AnimatedScale(
-                scale: _isPressed ? 0.92 : 1.0,
+                scale: _isPressed ? 0.93 : 1.0,
                 duration: const Duration(milliseconds: 90),
                 curve: Curves.easeOutCubic,
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(cornerRadius),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                    gradient: RadialGradient(
+                      center: const Alignment(0, -0.2),
+                      radius: 0.9,
                       colors: [
-                        effectiveColor.withOpacity(_isPressed ? 0.95 : (isReactiveActive ? 0.92 : 0.82)),
-                        effectiveColor.withOpacity(_isPressed ? 0.70 : (isReactiveActive ? 0.65 : 0.45)),
+                        effectiveColor.withOpacity(_isPressed ? 0.50 : (isReactiveActive ? 0.42 : 0.22)),
+                        const Color(0xFF151824),
+                        const Color(0xFF0F111A),
                       ],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: effectiveColor.withOpacity(_isPressed ? 0.7 : (isReactiveActive ? 0.5 : 0.25)),
-                        blurRadius: _isPressed ? 16 : (isReactiveActive ? 14 : 8),
-                        spreadRadius: _isPressed ? 2 : (isReactiveActive ? 1 : 0),
-                        offset: const Offset(0, 3),
+                        color: Colors.black.withOpacity(0.6),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3.5),
                       ),
+                      if (_isPressed || isReactiveActive)
+                        BoxShadow(
+                          color: effectiveColor.withOpacity(0.4),
+                          blurRadius: 14,
+                          spreadRadius: 1,
+                        ),
                     ],
                     border: Border.all(
                       color: widget.isEditMode
                           ? Colors.amberAccent
                           : (_isPressed
-                              ? Colors.white.withOpacity(0.9)
-                              : (isReactiveActive ? Colors.white.withOpacity(0.85) : effectiveColor.withOpacity(0.5))),
-                      width: widget.isEditMode ? 2.0 : (_isPressed || isReactiveActive ? 2.0 : 1.2),
+                              ? Colors.white
+                              : (isReactiveActive
+                                  ? effectiveColor
+                                  : effectiveColor.withOpacity(0.45))),
+                      width: widget.isEditMode ? 2.0 : (_isPressed || isReactiveActive ? 1.8 : 1.2),
                     ),
                   ),
                   child: Stack(
                     children: [
-                      // Subtle inner gloss shine
+                      // Subtle top specular gloss reflection (LCD glass cap)
                       Positioned(
                         top: 0,
                         left: 0,
                         right: 0,
-                        height: math.max(14.0, minDim * 0.3),
+                        height: math.max(12.0, minDim * 0.32),
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.vertical(top: Radius.circular(cornerRadius - 1)),
@@ -145,7 +157,7 @@ class _DeckButtonWidgetState extends State<DeckButtonWidget> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.white.withOpacity(0.20),
+                                Colors.white.withOpacity(0.12),
                                 Colors.transparent,
                               ],
                             ),
@@ -153,7 +165,7 @@ class _DeckButtonWidgetState extends State<DeckButtonWidget> {
                         ),
                       ),
 
-                      // Button Content (Responsive Icon + Title)
+                      // Button Content (Illuminated Icon + Frosted Glass Label Badge)
                       Center(
                         child: Padding(
                           padding: EdgeInsets.symmetric(horizontal: innerPad, vertical: 4),
@@ -164,33 +176,43 @@ class _DeckButtonWidgetState extends State<DeckButtonWidget> {
                               Icon(
                                 effectiveIcon,
                                 size: iconSize,
-                                color: Colors.white,
+                                color: isReactiveActive || _isPressed ? Colors.white : effectiveColor.withOpacity(0.95),
                                 shadows: [
                                   Shadow(
-                                    color: Colors.black.withOpacity(0.6),
+                                    color: effectiveColor.withOpacity(0.8),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 0),
+                                  ),
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.7),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
-                              SizedBox(height: (minDim * 0.05).clamp(2.0, 6.0)),
-                              Text(
-                                effectiveTitle,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: fontSize,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: 0.2,
-                                  shadows: const [
-                                    Shadow(
-                                      color: Colors.black87,
-                                      blurRadius: 3,
-                                      offset: Offset(0, 1),
-                                    ),
-                                  ],
+                              SizedBox(height: (minDim * 0.05).clamp(2.0, 5.0)),
+                              // Frosted Glass Label Pill
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: (innerPad * 0.9).clamp(4.0, 8.0),
+                                  vertical: 1.5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.45),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                                ),
+                                child: Text(
+                                  effectiveTitle,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: fontSize,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.3,
+                                  ),
                                 ),
                               ),
                             ],

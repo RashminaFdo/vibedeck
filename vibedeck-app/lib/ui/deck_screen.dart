@@ -90,14 +90,19 @@ class _DeckScreenState extends State<DeckScreen> {
     final nameCtrl = TextEditingController(text: "Profile ${_profiles.length + 1}");
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Create New Deck Profile"),
-        content: TextField(
-          controller: nameCtrl,
-          decoration: const InputDecoration(labelText: "Profile Name", border: OutlineInputBorder()),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text("Cancel")),
+      builder: (ctx) {
+        final isLandscape = MediaQuery.of(ctx).orientation == Orientation.landscape;
+        return AlertDialog(
+          backgroundColor: const Color(0xFF161824),
+          insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: isLandscape ? 12 : 24),
+          title: const Text("Create New Deck Profile", style: TextStyle(color: VibeTheme.cyanNeon, fontSize: 16)),
+          content: TextField(
+            controller: nameCtrl,
+            style: const TextStyle(color: Colors.white),
+            decoration: const InputDecoration(labelText: "Profile Name", border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () {
               final name = nameCtrl.text.trim();
@@ -120,6 +125,75 @@ class _DeckScreenState extends State<DeckScreen> {
             child: const Text("Create"),
           ),
         ],
+      );
+    },
+  );
+}
+
+  void _showProfilePicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF131622),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 8, bottom: 6),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Switch Deck Preset", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  TextButton.icon(
+                    icon: const Icon(Icons.add_rounded, size: 18, color: VibeTheme.cyanNeon),
+                    label: const Text("New Deck", style: TextStyle(color: VibeTheme.cyanNeon, fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _addNewProfile();
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Colors.white12),
+            Flexible(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: _profiles.length,
+                separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.white10),
+                itemBuilder: (ctx, i) {
+                  final p = _profiles[i];
+                  final isSel = i == _currentProfileIndex;
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: isSel ? VibeTheme.cyanNeon.withOpacity(0.2) : const Color(0xFF1F2336),
+                      child: Icon(_getProfileIcon(p.name), color: isSel ? VibeTheme.cyanNeon : Colors.white70, size: 20),
+                    ),
+                    title: Text(p.name, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.w500, color: isSel ? VibeTheme.cyanNeon : Colors.white)),
+                    subtitle: Text("${p.columns * p.rows} Keys (${p.columns}x${p.rows}) • ${p.buttons.length} configured", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    trailing: isSel ? const Icon(Icons.check_circle_rounded, color: VibeTheme.cyanNeon) : null,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      setState(() => _currentProfileIndex = i);
+                      StorageService.saveSelectedProfileId(p.id);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
   }
@@ -165,11 +239,16 @@ class _DeckScreenState extends State<DeckScreen> {
 
     showDialog(
       context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDState) => AlertDialog(
-          backgroundColor: const Color(0xFF161824),
-          title: const Text("Stream Deck Grid Presets", style: TextStyle(color: VibeTheme.cyanNeon)),
-          content: SingleChildScrollView(
+      builder: (ctx) {
+        final isLandscape = MediaQuery.of(ctx).orientation == Orientation.landscape;
+        return StatefulBuilder(
+          builder: (ctx, setDState) => AlertDialog(
+            backgroundColor: const Color(0xFF161824),
+            insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: isLandscape ? 10 : 24),
+            contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: isLandscape ? 8 : 20),
+            titlePadding: EdgeInsets.fromLTRB(20, isLandscape ? 12 : 20, 20, 0),
+            title: const Text("Stream Deck Grid Presets", style: TextStyle(color: VibeTheme.cyanNeon, fontSize: 16)),
+            content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -268,9 +347,10 @@ class _DeckScreenState extends State<DeckScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -293,19 +373,19 @@ class _DeckScreenState extends State<DeckScreen> {
           children: [
             Column(
               children: [
-                // Responsive Top Header Bar
+                // Responsive Top Header Bar (Includes Mode Switcher in Landscape!)
                 _buildTopBar(isLandscape),
 
-                // Live Volume, Mic Mute & Telemetry Bar
-                _buildTelemetryBar(isLandscape),
+                // Live Volume, Mic Mute & Telemetry Bar (ONLY in Deck mode to maximize space in Mouse/Keys)
+                if (_activeMode == 0) _buildTelemetryBar(isLandscape),
 
-                // Horizontal Preset Chips (1-tap deck switching)
-                if (_activeMode == 0) _buildProfileStrip(isLandscape),
+                // Horizontal Preset Chips (ONLY in Portrait Deck mode; in landscape it's in Top Bar!)
+                if (!isLandscape && _activeMode == 0) _buildProfileStrip(isLandscape),
 
-                // Body based on active mode with bottom padding for dock
+                // Body based on active mode with zero bottom padding in landscape!
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.only(bottom: isLandscape ? 54 : 62),
+                    padding: EdgeInsets.only(bottom: isLandscape ? 0 : 62),
                     child: _activeMode == 0
                         ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
                         : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
@@ -314,15 +394,16 @@ class _DeckScreenState extends State<DeckScreen> {
               ],
             ),
 
-            // Ergonomic Floating Cyber-Dock (Deck / Mouse / Keyboard)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: isLandscape ? 6 : 12,
-              child: Center(
-                child: _buildFloatingCyberDock(isLandscape),
+            // Ergonomic Floating Cyber-Dock ONLY in Portrait! (In landscape, it's embedded in Top Bar)
+            if (!isLandscape)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 12,
+                child: Center(
+                  child: _buildFloatingCyberDock(isLandscape),
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -335,10 +416,11 @@ class _DeckScreenState extends State<DeckScreen> {
       builder: (context, _) {
         final isConnected = _conn.state == VibeConnectionState.connected;
         final isConnecting = _conn.state == VibeConnectionState.connecting;
-        final isNarrow = MediaQuery.of(context).size.width < 460;
+        final isNarrow = MediaQuery.of(context).size.width < 500;
+        final currentP = _currentProfile;
 
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: isLandscape ? 10 : 14, vertical: isLandscape ? 2 : 4),
+          padding: EdgeInsets.symmetric(horizontal: isLandscape ? 8 : 12, vertical: isLandscape ? 2 : 4),
           decoration: BoxDecoration(
             color: VibeTheme.surfaceHighlight.withOpacity(0.6),
             border: const Border(bottom: BorderSide(color: Colors.white12, width: 1)),
@@ -360,9 +442,9 @@ class _DeckScreenState extends State<DeckScreen> {
                         borderRadius: BorderRadius.circular(6),
                         child: Image.asset(
                           'assets/logo.png',
-                          width: 24,
-                          height: 24,
-                          errorBuilder: (_, __, ___) => const Icon(Icons.stream_rounded, color: VibeTheme.cyanNeon, size: 22),
+                          width: 22,
+                          height: 22,
+                          errorBuilder: (_, __, ___) => const Icon(Icons.stream_rounded, color: VibeTheme.cyanNeon, size: 20),
                         ),
                       ),
                       if (!isNarrow && !isLandscape) ...[
@@ -372,7 +454,7 @@ class _DeckScreenState extends State<DeckScreen> {
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 0.5),
                         ),
                       ],
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 6),
                       // Animated pulse status dot
                       Container(
                         width: 8,
@@ -392,7 +474,47 @@ class _DeckScreenState extends State<DeckScreen> {
                 ),
               ),
 
+              // Landscape Deck Preset Dropdown Pill (Saves whole vertical bar!)
+              if (isLandscape && _activeMode == 0 && currentP != null) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: _showProfilePicker,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF161928),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: VibeTheme.cyanNeon.withOpacity(0.4), width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_getProfileIcon(currentP.name), size: 14, color: VibeTheme.cyanNeon),
+                        const SizedBox(width: 5),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 130),
+                          child: Text(
+                            currentP.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        const Icon(Icons.arrow_drop_down_rounded, size: 16, color: Colors.white70),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+
               const Spacer(),
+
+              // IN LANDSCAPE: EMBED MODE SWITCHER TABS RIGHT IN TOP BAR!
+              if (isLandscape) ...[
+                _buildModeSelectorTabs(isLandscape: true),
+                const Spacer(),
+              ],
 
               // Quick Action Buttons in Top Bar
               if (_activeMode == 0) ...[
@@ -527,41 +649,47 @@ class _DeckScreenState extends State<DeckScreen> {
     return Icons.grid_view_rounded;
   }
 
-  // Ergonomic Floating Cyber-Dock (Deck | Mouse | Keyboard)
-  Widget _buildFloatingCyberDock(bool isLandscape) {
+  // Ergonomic Mode Switcher Tabs for Landscape Top Bar & Portrait Bottom Dock
+  Widget _buildModeSelectorTabs({required bool isLandscape}) {
     return Container(
-      height: 46,
-      padding: const EdgeInsets.all(3.5),
+      height: isLandscape ? 30 : 46,
+      padding: EdgeInsets.all(isLandscape ? 2.5 : 3.5),
       decoration: BoxDecoration(
         color: const Color(0xE60D0F18),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: VibeTheme.cyanNeon.withOpacity(0.35), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.55),
-            blurRadius: 14,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: VibeTheme.cyanNeon.withOpacity(0.12),
-            blurRadius: 10,
-            spreadRadius: -1,
-          ),
-        ],
+        borderRadius: BorderRadius.circular(isLandscape ? 16 : 24),
+        border: Border.all(color: VibeTheme.cyanNeon.withOpacity(0.35), width: 1.0),
+        boxShadow: isLandscape
+            ? null
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.55),
+                  blurRadius: 14,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: VibeTheme.cyanNeon.withOpacity(0.12),
+                  blurRadius: 10,
+                  spreadRadius: -1,
+                ),
+              ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _buildDockTab(0, Icons.grid_view_rounded, "Deck"),
-          _buildDockTab(1, Icons.mouse_rounded, "Mouse"),
-          _buildDockTab(2, Icons.keyboard_rounded, "Keys"),
+          _buildDockTab(0, Icons.grid_view_rounded, "Deck", isLandscape),
+          _buildDockTab(1, Icons.mouse_rounded, "Mouse", isLandscape),
+          _buildDockTab(2, Icons.keyboard_rounded, "Keys", isLandscape),
         ],
       ),
     );
   }
 
-  Widget _buildDockTab(int index, IconData icon, String label) {
+  Widget _buildFloatingCyberDock(bool isLandscape) {
+    return _buildModeSelectorTabs(isLandscape: isLandscape);
+  }
+
+  Widget _buildDockTab(int index, IconData icon, String label, bool isLandscape) {
     final isSelected = _activeMode == index;
 
     return GestureDetector(
@@ -572,9 +700,12 @@ class _DeckScreenState extends State<DeckScreen> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
         curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: isLandscape ? 10 : 14,
+          vertical: isLandscape ? 3 : 6,
+        ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(isLandscape ? 13 : 20),
           gradient: isSelected
               ? const LinearGradient(
                   colors: [Color(0xFF00F2FE), Color(0xFF4FACFE)],
@@ -584,7 +715,7 @@ class _DeckScreenState extends State<DeckScreen> {
               ? [
                   BoxShadow(
                     color: VibeTheme.cyanNeon.withOpacity(0.35),
-                    blurRadius: 8,
+                    blurRadius: isLandscape ? 5 : 8,
                     spreadRadius: 1,
                   )
                 ]
@@ -595,14 +726,14 @@ class _DeckScreenState extends State<DeckScreen> {
           children: [
             Icon(
               icon,
-              size: 18,
+              size: isLandscape ? 14 : 18,
               color: isSelected ? Colors.black : Colors.white70,
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: isLandscape ? 11 : 12,
                 fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 color: isSelected ? Colors.black : Colors.white70,
                 letterSpacing: 0.3,
@@ -746,7 +877,7 @@ class _DeckScreenState extends State<DeckScreen> {
     final buttons = profile.buttons;
     final totalSlots = profile.columns * profile.rows;
     final padding = isLandscape ? 6.0 : 10.0;
-    final spacing = isLandscape ? 6.0 : 8.0;
+    final spacing = isLandscape ? 7.0 : 8.0;
 
     return Padding(
       padding: EdgeInsets.all(padding),
@@ -757,69 +888,87 @@ class _DeckScreenState extends State<DeckScreen> {
           final cols = profile.columns;
           final rows = profile.rows;
 
-          // Dynamically compute cell aspect ratio so ALL buttons fit in landscape without scrolling!
-          double childAspectRatio = 1.0;
-          if (isLandscape && rows > 0 && cols > 0) {
-            final cellW = (availableWidth - (spacing * (cols - 1))) / cols;
-            final cellH = (availableHeight - (spacing * (rows - 1))) / rows;
-            if (cellW > 0 && cellH > 0) {
-              childAspectRatio = cellW / cellH;
-            }
+          if (cols <= 0 || rows <= 0) return const SizedBox.shrink();
+
+          // Authentic Stream Deck Squircle Key Sizing:
+          // In physical Elgato Stream Decks, keys are squircle with aspect ratio ~1.08 (slightly wider than tall)
+          const double targetRatio = 1.08;
+
+          // Calculate cell height so all rows fit perfectly without scrolling:
+          double cellH = (availableHeight - (spacing * (rows - 1))) / rows;
+          double cellW = cellH * targetRatio;
+
+          // Check if total grid width fits in availableWidth:
+          double totalGridW = (cellW * cols) + (spacing * (cols - 1));
+          if (totalGridW > availableWidth) {
+            // Scale based on available width:
+            cellW = (availableWidth - (spacing * (cols - 1))) / cols;
+            cellH = cellW / targetRatio;
+            totalGridW = availableWidth;
           }
 
-          return GridView.builder(
-            physics: isLandscape ? const NeverScrollableScrollPhysics() : const BouncingScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: cols,
-              crossAxisSpacing: spacing,
-              mainAxisSpacing: spacing,
-              childAspectRatio: childAspectRatio,
-            ),
-            itemCount: _isEditMode ? totalSlots : buttons.length,
-            itemBuilder: (context, idx) {
-              if (idx < buttons.length) {
-                final btn = buttons[idx];
-                return DeckButtonWidget(
-                  button: btn,
-                  isEditMode: _isEditMode,
-                  onTap: () {
-                    if (_isEditMode) {
-                      _editButton(btn, idx);
-                    } else {
-                      _conn.sendAction(btn);
-                    }
-                  },
-                  onLongPress: () {
-                    _editButton(btn, idx);
-                  },
-                );
-              } else {
-                // Empty placeholder slot in edit mode
-                return InkWell(
-                  onTap: () => _editButton(null, idx),
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    decoration: BoxDecoration(
+          final totalGridH = (cellH * rows) + (spacing * (rows - 1));
+          final childAspectRatio = cellW / cellH;
+
+          return Center(
+            child: SizedBox(
+              width: totalGridW,
+              height: totalGridH,
+              child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: cols,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
+                  childAspectRatio: childAspectRatio,
+                ),
+                itemCount: _isEditMode ? totalSlots : buttons.length,
+                itemBuilder: (context, idx) {
+                  if (idx < buttons.length) {
+                    final btn = buttons[idx];
+                    return DeckButtonWidget(
+                      button: btn,
+                      isEditMode: _isEditMode,
+                      onTap: () {
+                        if (_isEditMode) {
+                          _editButton(btn, idx);
+                        } else {
+                          _conn.sendAction(btn);
+                        }
+                      },
+                      onLongPress: () {
+                        _editButton(btn, idx);
+                      },
+                    );
+                  } else {
+                    // Empty placeholder slot in edit mode
+                    return InkWell(
+                      onTap: () => _editButton(null, idx),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white24, style: BorderStyle.solid, width: 1),
-                      color: Colors.white.withOpacity(0.03),
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.add_rounded, size: isLandscape ? 20 : 28, color: Colors.white38),
-                          if (!isLandscape) ...[
-                            const SizedBox(height: 4),
-                            Text("Slot ${idx + 1}", style: const TextStyle(color: Colors.white30, fontSize: 11)),
-                          ],
-                        ],
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: Colors.white24, style: BorderStyle.solid, width: 1),
+                          color: Colors.white.withOpacity(0.03),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_rounded, size: isLandscape ? 20 : 28, color: Colors.white38),
+                              if (!isLandscape) ...[
+                                const SizedBox(height: 4),
+                                Text("Slot ${idx + 1}", style: const TextStyle(color: Colors.white30, fontSize: 11)),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              }
-            },
+                    );
+                  }
+                },
+              ),
+            ),
           );
         },
       ),
