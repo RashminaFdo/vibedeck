@@ -594,3 +594,99 @@ def sleep_pc() -> bool:
     except Exception as e:
         logger.error(f"Failed to sleep PC: {e}")
         return False
+
+
+def execute_spotify_action(action: str, payload: dict | None = None) -> bool:
+    """Executes a specialized Spotify desktop action on Windows."""
+    if payload is None:
+        payload = {}
+    act = action.lower().strip()
+    logger.info(f"Executing Spotify action: {act} with payload: {payload}")
+    try:
+        if act in ("play_uri", "playlist", "track", "album"):
+            uri = payload.get("uri", "").strip()
+            if not uri:
+                return False
+            if "open.spotify.com" in uri:
+                try:
+                    parts = uri.split("open.spotify.com/")[1].split("?")[0].split("/")
+                    if len(parts) >= 2:
+                        uri = f"spotify:{parts[0]}:{parts[1]}"
+                except Exception:
+                    pass
+            logger.info(f"Opening Spotify URI: {uri}")
+            os.startfile(uri)
+            if payload.get("shuffle", False):
+                time.sleep(0.6)
+                execute_hotkey(["ctrl", "s"])
+            if payload.get("auto_play", True):
+                time.sleep(0.6)
+                press_media_key("media_play_pause")
+            return True
+        elif act == "shuffle":
+            return execute_hotkey(["ctrl", "s"])
+        elif act == "repeat":
+            return execute_hotkey(["ctrl", "r"])
+        elif act == "play_pause":
+            return press_media_key("media_play_pause")
+        elif act == "next":
+            return press_media_key("media_next")
+        elif act == "prev":
+            return press_media_key("media_prev")
+        elif act == "like":
+            return execute_hotkey(["alt", "shift", "b"])
+        elif act == "open":
+            os.startfile("spotify:")
+            return True
+        elif act == "close":
+            subprocess.Popen("taskkill /f /im spotify.exe", shell=True)
+            return True
+        else:
+            logger.warning(f"Unknown Spotify action: {act}")
+            return False
+    except Exception as e:
+        logger.error(f"Spotify action failed: {e}")
+        return False
+
+
+def execute_discord_action(action: str, payload: dict | None = None) -> bool:
+    """Executes a specialized Discord desktop action on Windows."""
+    if payload is None:
+        payload = {}
+    act = action.lower().strip()
+    logger.info(f"Executing Discord action: {act} with payload: {payload}")
+    try:
+        if act in ("join_voice", "open_channel", "channel"):
+            url = payload.get("channel_url", "").strip()
+            if not url:
+                return False
+            if "discord.com/channels/" in url:
+                try:
+                    channel_path = url.split("discord.com/channels/")[1].split("?")[0]
+                    url = f"discord://-/channels/{channel_path}"
+                except Exception:
+                    pass
+            elif not url.startswith("discord://") and not url.startswith("http"):
+                url = f"discord://-/channels/{url}"
+            logger.info(f"Opening Discord channel: {url}")
+            os.startfile(url)
+            return True
+        elif act == "toggle_mute":
+            execute_hotkey(["ctrl", "shift", "m"])
+            toggle_mic_mute()
+            return True
+        elif act == "toggle_deafen":
+            return execute_hotkey(["ctrl", "shift", "d"])
+        elif act == "open":
+            os.startfile("discord:")
+            return True
+        elif act == "close":
+            subprocess.Popen("taskkill /im discord.exe", shell=True)
+            return True
+        else:
+            logger.warning(f"Unknown Discord action: {act}")
+            return False
+    except Exception as e:
+        logger.error(f"Discord action failed: {e}")
+        return False
+

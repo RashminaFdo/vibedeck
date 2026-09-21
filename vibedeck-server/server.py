@@ -267,6 +267,12 @@ async def handle_message(websocket, message_str: str):
             success = True
         elif action_kind == "type":
             success = actions.type_text(payload.get("text", ""))
+        elif action_kind == "spotify":
+            cmd = payload.get("action", payload.get("command", "play_pause"))
+            success = actions.execute_spotify_action(cmd, payload)
+        elif action_kind == "discord":
+            cmd = payload.get("action", payload.get("command", "toggle_mute"))
+            success = actions.execute_discord_action(cmd, payload)
         else:
             logger.warning(f"Unknown action kind: {action_kind}")
 

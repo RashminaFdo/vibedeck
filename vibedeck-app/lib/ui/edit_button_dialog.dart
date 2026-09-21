@@ -37,10 +37,18 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
   int _volumeLevel = 50;
   final TextEditingController _typeTextController = TextEditingController();
 
+  // Spotify and Discord payloads
+  String _spotifyAction = 'play_uri';
+  final TextEditingController _spotifyUriController = TextEditingController();
+  bool _spotifyShuffle = true;
+  bool _spotifyAutoPlay = true;
+  String _discordAction = 'toggle_mute';
+  final TextEditingController _discordUrlController = TextEditingController();
+
   final List<String> _presetColors = [
     '#6C5CE7', '#0984E3', '#00CEC9', '#00B894',
-    '#FDCB6E', '#E17055', '#D63031', '#FD79A8',
-    '#A29BFE', '#74B9FF', '#55EFC4', '#2D3436'
+    '#1ED760', '#5865F2', '#FDCB6E', '#E17055',
+    '#D63031', '#FD79A8', '#A29BFE', '#2D3436'
   ];
 
   final List<Map<String, dynamic>> _availableIcons = [
@@ -70,6 +78,12 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
     {'name': 'swap_horiz', 'icon': Icons.swap_horiz_rounded, 'label': 'AltTab'},
     {'name': 'games', 'icon': Icons.videogame_asset_rounded, 'label': 'Game'},
     {'name': 'cloud', 'icon': Icons.cloud_rounded, 'label': 'Cloud'},
+    {'name': 'headphones', 'icon': Icons.headphones_rounded, 'label': 'Headphones'},
+    {'name': 'shuffle', 'icon': Icons.shuffle_rounded, 'label': 'Shuffle'},
+    {'name': 'repeat', 'icon': Icons.repeat_rounded, 'label': 'Repeat'},
+    {'name': 'queue_music', 'icon': Icons.queue_music_rounded, 'label': 'Playlist'},
+    {'name': 'headset_mic', 'icon': Icons.headset_mic_rounded, 'label': 'Headset'},
+    {'name': 'call_end', 'icon': Icons.call_end_rounded, 'label': 'Disconnect'},
   ];
 
   @override
@@ -105,6 +119,14 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
         _powerCommand = b.payload['command'] ?? 'screen_off';
       } else if (_actionType == 'type') {
         _typeTextController.text = b.payload['text'] ?? '';
+      } else if (_actionType == 'spotify') {
+        _spotifyAction = b.payload['action'] ?? 'play_uri';
+        _spotifyUriController.text = b.payload['uri'] ?? '';
+        _spotifyShuffle = b.payload['shuffle'] ?? true;
+        _spotifyAutoPlay = b.payload['auto_play'] ?? true;
+      } else if (_actionType == 'discord') {
+        _discordAction = b.payload['action'] ?? 'toggle_mute';
+        _discordUrlController.text = b.payload['channel_url'] ?? '';
       }
     }
   }
@@ -116,6 +138,8 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
     _appTargetController.dispose();
     _urlController.dispose();
     _typeTextController.dispose();
+    _spotifyUriController.dispose();
+    _discordUrlController.dispose();
     super.dispose();
   }
 
@@ -144,6 +168,18 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
         return {'level': _volumeLevel};
       case 'type':
         return {'text': _typeTextController.text};
+      case 'spotify':
+        return {
+          'action': _spotifyAction,
+          'uri': _spotifyUriController.text.trim(),
+          'shuffle': _spotifyShuffle,
+          'auto_play': _spotifyAutoPlay,
+        };
+      case 'discord':
+        return {
+          'action': _discordAction,
+          'channel_url': _discordUrlController.text.trim(),
+        };
       default:
         return {};
     }
@@ -234,6 +270,16 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
                   children: [
                     _buildPresetQuickChip("Mic Mute", "mic_mute", {}, "mic_off", "#00FF88"),
                     const SizedBox(width: 6),
+                    _buildPresetQuickChip("Spotify", "spotify", {"action": "play_pause"}, "music_note", "#1ED760"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Lo-Fi Beats", "spotify", {"action": "play_uri", "uri": "spotify:playlist:37i9dQZF1DXdLEN7aqioXM", "shuffle": true, "auto_play": true}, "headphones", "#1ED760"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Shuffle", "spotify", {"action": "shuffle"}, "shuffle", "#1ED760"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Discord Mute", "discord", {"action": "toggle_mute"}, "mic_off", "#5865F2"),
+                    const SizedBox(width: 6),
+                    _buildPresetQuickChip("Discord Deafen", "discord", {"action": "toggle_deafen"}, "headset_off", "#5865F2"),
+                    const SizedBox(width: 6),
                     _buildPresetQuickChip("Screen Off", "power", {"command": "screen_off"}, "lock", "#00F2FE"),
                     const SizedBox(width: 6),
                     _buildPresetQuickChip("Sleep PC", "power", {"command": "sleep"}, "lock", "#FF2A6D"),
@@ -269,6 +315,8 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
                 runSpacing: 8,
                 children: [
                   _buildTypeChip("media", "Media Key", Icons.play_arrow_rounded),
+                  _buildTypeChip("spotify", "Spotify", Icons.music_note_rounded),
+                  _buildTypeChip("discord", "Discord", Icons.forum_rounded),
                   _buildTypeChip("mic_mute", "Mic Mute", Icons.mic_off_rounded),
                   _buildTypeChip("power", "Power/Sleep", Icons.nightlight_round),
                   _buildTypeChip("sys_cpu", "CPU Stats", Icons.memory_rounded),
@@ -660,6 +708,201 @@ class _EditButtonDialogState extends State<EditButtonDialog> {
             border: OutlineInputBorder(),
             isDense: true,
           ),
+        );
+
+      case 'spotify':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DropdownButtonFormField<String>(
+              value: _spotifyAction,
+              decoration: const InputDecoration(labelText: "Spotify Command"),
+              items: const [
+                DropdownMenuItem(value: 'play_uri', child: Text("🎵 Play Playlist / Track / Album")),
+                DropdownMenuItem(value: 'play_pause', child: Text("⏯️ Play / Pause Toggle")),
+                DropdownMenuItem(value: 'shuffle', child: Text("🔀 Toggle Shuffle (Ctrl+S)")),
+                DropdownMenuItem(value: 'repeat', child: Text("🔁 Toggle Repeat (Ctrl+R)")),
+                DropdownMenuItem(value: 'next', child: Text("⏭️ Next Track")),
+                DropdownMenuItem(value: 'prev', child: Text("⏮️ Previous Track")),
+                DropdownMenuItem(value: 'like', child: Text("💚 Like / Save Song (Alt+Shift+B)")),
+                DropdownMenuItem(value: 'open', child: Text("🚀 Launch Spotify App")),
+                DropdownMenuItem(value: 'close', child: Text("🛑 Quit Spotify")),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _spotifyAction = val;
+                    if (val == 'shuffle' && _titleController.text == 'My Button') {
+                      _titleController.text = 'Shuffle';
+                      _iconName = 'shuffle';
+                      _colorHex = '#1ED760';
+                    }
+                  });
+                }
+              },
+            ),
+            if (_spotifyAction == 'play_uri') ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _spotifyUriController,
+                decoration: InputDecoration(
+                  labelText: "Spotify URI or Web Link",
+                  hintText: "e.g. spotify:playlist:... or https://open.spotify.com/...",
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.link_rounded, color: Color(0xFF1ED760)),
+                  isDense: true,
+                  suffixIcon: _spotifyUriController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 16),
+                          onPressed: () => setState(() => _spotifyUriController.clear()),
+                        )
+                      : null,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 8),
+              const Text("Curated Quick Playlists:", style: TextStyle(fontSize: 11, color: Colors.grey)),
+              const SizedBox(height: 6),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    ActionChip(
+                      label: const Text("Lo-Fi Chill", style: TextStyle(fontSize: 11)),
+                      avatar: const Icon(Icons.music_note, size: 14, color: Color(0xFF1ED760)),
+                      onPressed: () => setState(() {
+                        _spotifyUriController.text = "spotify:playlist:37i9dQZF1DXdLEN7aqioXM";
+                        _titleController.text = "Lo-Fi Beats";
+                        _colorHex = "#1ED760";
+                        _iconName = "headphones";
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      label: const Text("Top Hits", style: TextStyle(fontSize: 11)),
+                      avatar: const Icon(Icons.trending_up, size: 14, color: Color(0xFF1ED760)),
+                      onPressed: () => setState(() {
+                        _spotifyUriController.text = "spotify:playlist:37i9dQZF1DXcBWIGoYBM5M";
+                        _titleController.text = "Top Hits";
+                        _colorHex = "#1ED760";
+                        _iconName = "music_note";
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      label: const Text("Coding Focus", style: TextStyle(fontSize: 11)),
+                      avatar: const Icon(Icons.code, size: 14, color: Color(0xFF1ED760)),
+                      onPressed: () => setState(() {
+                        _spotifyUriController.text = "spotify:playlist:37i9dQZF1DWZeKCadgRdKQ";
+                        _titleController.text = "Deep Focus";
+                        _colorHex = "#1ED760";
+                        _iconName = "headphones";
+                      }),
+                    ),
+                    const SizedBox(width: 6),
+                    ActionChip(
+                      label: const Text("Workout", style: TextStyle(fontSize: 11)),
+                      avatar: const Icon(Icons.fitness_center, size: 14, color: Color(0xFF1ED760)),
+                      onPressed: () => setState(() {
+                        _spotifyUriController.text = "spotify:playlist:37i9dQZF1DX76Wlfdnj7AP";
+                        _titleController.text = "Workout";
+                        _colorHex = "#1ED760";
+                        _iconName = "flash_on";
+                      }),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Checkbox(
+                    value: _spotifyAutoPlay,
+                    activeColor: const Color(0xFF1ED760),
+                    onChanged: (val) => setState(() => _spotifyAutoPlay = val ?? true),
+                  ),
+                  const Text("Auto-play", style: TextStyle(fontSize: 12)),
+                  const SizedBox(width: 12),
+                  Checkbox(
+                    value: _spotifyShuffle,
+                    activeColor: const Color(0xFF1ED760),
+                    onChanged: (val) => setState(() => _spotifyShuffle = val ?? true),
+                  ),
+                  const Text("Shuffle", style: TextStyle(fontSize: 12)),
+                ],
+              ),
+            ],
+          ],
+        );
+
+      case 'discord':
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DropdownButtonFormField<String>(
+              value: _discordAction,
+              decoration: const InputDecoration(labelText: "Discord Action"),
+              items: const [
+                DropdownMenuItem(value: 'toggle_mute', child: Text("🎙️ Toggle Mic Mute (Ctrl+Shift+M)")),
+                DropdownMenuItem(value: 'toggle_deafen', child: Text("🔇 Toggle Deafen Audio (Ctrl+Shift+D)")),
+                DropdownMenuItem(value: 'join_voice', child: Text("🔊 Join Voice Channel / Call")),
+                DropdownMenuItem(value: 'open_channel', child: Text("💬 Open Text Channel")),
+                DropdownMenuItem(value: 'open', child: Text("🚀 Launch Discord App")),
+                DropdownMenuItem(value: 'close', child: Text("🛑 Quit Discord")),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() {
+                    _discordAction = val;
+                    if (val == 'toggle_mute' && _titleController.text == 'My Button') {
+                      _titleController.text = 'Discord Mute';
+                      _iconName = 'mic_off';
+                      _colorHex = '#5865F2';
+                    } else if (val == 'toggle_deafen' && _titleController.text == 'My Button') {
+                      _titleController.text = 'Deafen';
+                      _iconName = 'headset_off';
+                      _colorHex = '#5865F2';
+                    }
+                  });
+                }
+              },
+            ),
+            if (_discordAction == 'join_voice' || _discordAction == 'open_channel') ...[
+              const SizedBox(height: 12),
+              TextField(
+                controller: _discordUrlController,
+                decoration: InputDecoration(
+                  labelText: _discordAction == 'join_voice' ? "Voice Channel Link / URI" : "Text Channel Link / URI",
+                  hintText: "e.g. discord://-/channels/GUILD_ID/CHANNEL_ID",
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.link_rounded, color: Color(0xFF5865F2)),
+                  isDense: true,
+                ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF5865F2).withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFF5865F2).withOpacity(0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Color(0xFF5865F2)),
+                    SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        "Tip: In Discord, right-click any channel -> 'Copy Channel Link', and paste it here! Tapping this button connects automatically.",
+                        style: TextStyle(fontSize: 10.5, color: Colors.white70),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         );
 
       default:

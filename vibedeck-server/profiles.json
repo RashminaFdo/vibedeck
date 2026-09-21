@@ -223,7 +223,10 @@
           "title": "Copy",
           "action_type": "hotkey",
           "payload": {
-            "keys": ["ctrl", "c"]
+            "keys": [
+              "ctrl",
+              "c"
+            ]
           },
           "color": "#74B9FF",
           "icon": "content_copy"
@@ -233,7 +236,10 @@
           "title": "Paste",
           "action_type": "hotkey",
           "payload": {
-            "keys": ["ctrl", "v"]
+            "keys": [
+              "ctrl",
+              "v"
+            ]
           },
           "color": "#A29BFE",
           "icon": "content_paste"
@@ -243,7 +249,10 @@
           "title": "Undo",
           "action_type": "hotkey",
           "payload": {
-            "keys": ["ctrl", "z"]
+            "keys": [
+              "ctrl",
+              "z"
+            ]
           },
           "color": "#E17055",
           "icon": "undo"

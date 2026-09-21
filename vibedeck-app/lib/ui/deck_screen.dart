@@ -50,6 +50,7 @@ class _DeckScreenState extends State<DeckScreen> {
   }
 
   Future<void> _loadInitialData() async {
+    final startTime = DateTime.now();
     final profiles = await StorageService.loadProfiles();
     final lastProfileId = await StorageService.getSelectedProfileId();
 
@@ -57,6 +58,12 @@ class _DeckScreenState extends State<DeckScreen> {
     if (lastProfileId != null) {
       final found = profiles.indexWhere((p) => p.id == lastProfileId);
       if (found != -1) idx = found;
+    }
+
+    // Ensure splash loader displays for at least 800ms for a seamless intro experience
+    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
+    if (elapsed < 800) {
+      await Future.delayed(Duration(milliseconds: 800 - elapsed));
     }
 
     if (mounted) {
@@ -354,59 +361,63 @@ class _DeckScreenState extends State<DeckScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(
-        backgroundColor: VibeTheme.background,
-        body: Center(
-          child: VibeCyberLoader(statusText: "SYNCHRONIZING VIBEDECK MATRIX..."),
-        ),
-      );
-    }
-
-    final profile = _currentProfile;
     final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+    final profile = _currentProfile;
 
-    return Scaffold(
-      backgroundColor: VibeTheme.background,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                // Responsive Top Header Bar (Includes Mode Switcher in Landscape!)
-                _buildTopBar(isLandscape),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 450),
+      switchInCurve: Curves.easeOut,
+      switchOutCurve: Curves.easeIn,
+      child: _isLoading
+          ? const Scaffold(
+              key: ValueKey("splash_loading"),
+              backgroundColor: VibeTheme.background,
+              body: Center(
+                child: VibeCyberLoader(statusText: "SYNCHRONIZING VIBEDECK MATRIX..."),
+              ),
+            )
+          : Scaffold(
+              key: const ValueKey("main_deck_view"),
+              backgroundColor: VibeTheme.background,
+              body: SafeArea(
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        // Responsive Top Header Bar (Includes Mode Switcher in Landscape!)
+                        _buildTopBar(isLandscape),
 
-                // Live Volume, Mic Mute & Telemetry Bar (ONLY in Deck mode to maximize space in Mouse/Keys)
-                if (_activeMode == 0) _buildTelemetryBar(isLandscape),
+                        // Live Volume, Mic Mute & Telemetry Bar (ONLY in Deck mode to maximize space in Mouse/Keys)
+                        if (_activeMode == 0) _buildTelemetryBar(isLandscape),
 
-                // Horizontal Preset Chips (ONLY in Portrait Deck mode; in landscape it's in Top Bar!)
-                if (!isLandscape && _activeMode == 0) _buildProfileStrip(isLandscape),
+                        // Horizontal Preset Chips (ONLY in Portrait Deck mode; in landscape it's in Top Bar!)
+                        if (!isLandscape && _activeMode == 0) _buildProfileStrip(isLandscape),
 
-                // Body based on active mode with zero bottom padding in landscape!
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: isLandscape ? 0 : 62),
-                    child: _activeMode == 0
-                        ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
-                        : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
-                  ),
-                ),
-              ],
-            ),
+                        // Body based on active mode with zero bottom padding in landscape!
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(bottom: isLandscape ? 0 : 62),
+                            child: _activeMode == 0
+                                ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
+                                : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
+                          ),
+                        ),
+                      ],
+                    ),
 
-            // Ergonomic Floating Cyber-Dock ONLY in Portrait! (In landscape, it's embedded in Top Bar)
-            if (!isLandscape)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 12,
-                child: Center(
-                  child: _buildFloatingCyberDock(isLandscape),
+                    if (!isLandscape)
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 12,
+                        child: Center(
+                          child: _buildFloatingCyberDock(isLandscape),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-          ],
-        ),
-      ),
+            ),
     );
   }
 
@@ -893,6 +904,7 @@ class _DeckScreenState extends State<DeckScreen> {
           // Authentic Stream Deck Squircle Key Sizing:
           // In physical Elgato Stream Decks, keys are squircle with aspect ratio ~1.08 (slightly wider than tall)
           const double targetRatio = 1.08;
+          final double minCellW = isLandscape ? 68.0 : 64.0;
 
           // Calculate cell height so all rows fit perfectly without scrolling:
           double cellH = (availableHeight - (spacing * (rows - 1))) / rows;
@@ -900,76 +912,101 @@ class _DeckScreenState extends State<DeckScreen> {
 
           // Check if total grid width fits in availableWidth:
           double totalGridW = (cellW * cols) + (spacing * (cols - 1));
+          bool needsHorizontalScroll = false;
+
           if (totalGridW > availableWidth) {
-            // Scale based on available width:
-            cellW = (availableWidth - (spacing * (cols - 1))) / cols;
-            cellH = cellW / targetRatio;
-            totalGridW = availableWidth;
+            final double scaledCellW = (availableWidth - (spacing * (cols - 1))) / cols;
+            if (scaledCellW >= minCellW) {
+              // Scales down comfortably without shrinking keys too small
+              cellW = scaledCellW;
+              cellH = cellW / targetRatio;
+              totalGridW = availableWidth;
+            } else {
+              // Wide grid (e.g. 8 columns on mobile phone):
+              // Protect comfortable touch target and enable smooth horizontal swipe!
+              needsHorizontalScroll = true;
+              cellW = minCellW;
+              cellH = cellW / targetRatio;
+              totalGridW = (cellW * cols) + (spacing * (cols - 1));
+            }
           }
 
           final totalGridH = (cellH * rows) + (spacing * (rows - 1));
           final childAspectRatio = cellW / cellH;
 
-          return Center(
-            child: SizedBox(
-              width: totalGridW,
-              height: totalGridH,
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: cols,
-                  crossAxisSpacing: spacing,
-                  mainAxisSpacing: spacing,
-                  childAspectRatio: childAspectRatio,
-                ),
-                itemCount: _isEditMode ? totalSlots : buttons.length,
-                itemBuilder: (context, idx) {
-                  if (idx < buttons.length) {
-                    final btn = buttons[idx];
-                    return DeckButtonWidget(
-                      button: btn,
-                      isEditMode: _isEditMode,
-                      onTap: () {
-                        if (_isEditMode) {
-                          _editButton(btn, idx);
-                        } else {
-                          _conn.sendAction(btn);
-                        }
-                      },
-                      onLongPress: () {
+          final gridWidget = SizedBox(
+            width: totalGridW,
+            height: totalGridH,
+            child: GridView.builder(
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                crossAxisSpacing: spacing,
+                mainAxisSpacing: spacing,
+                childAspectRatio: childAspectRatio,
+              ),
+              itemCount: _isEditMode ? totalSlots : buttons.length,
+              itemBuilder: (context, idx) {
+                if (idx < buttons.length) {
+                  final btn = buttons[idx];
+                  return DeckButtonWidget(
+                    button: btn,
+                    isEditMode: _isEditMode,
+                    onTap: () {
+                      if (_isEditMode) {
                         _editButton(btn, idx);
-                      },
-                    );
-                  } else {
-                    // Empty placeholder slot in edit mode
-                    return InkWell(
-                      onTap: () => _editButton(null, idx),
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: Colors.white24, style: BorderStyle.solid, width: 1),
-                          color: Colors.white.withOpacity(0.03),
-                        ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_rounded, size: isLandscape ? 20 : 28, color: Colors.white38),
-                              if (!isLandscape) ...[
-                                const SizedBox(height: 4),
-                                Text("Slot ${idx + 1}", style: const TextStyle(color: Colors.white30, fontSize: 11)),
-                              ],
+                      } else {
+                        _conn.sendAction(btn);
+                      }
+                    },
+                    onLongPress: () {
+                      _editButton(btn, idx);
+                    },
+                  );
+                } else {
+                  // Empty placeholder slot in edit mode
+                  return InkWell(
+                    onTap: () => _editButton(null, idx),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.white24, style: BorderStyle.solid, width: 1),
+                        color: Colors.white.withOpacity(0.03),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.add_rounded, size: isLandscape ? 20 : 28, color: Colors.white38),
+                            if (!isLandscape) ...[
+                              const SizedBox(height: 4),
+                              Text("Slot ${idx + 1}", style: const TextStyle(color: Colors.white30, fontSize: 11)),
                             ],
-                          ),
+                          ],
                         ),
                       ),
-                    );
-                  }
-                },
-              ),
+                    ),
+                  );
+                }
+              },
             ),
           );
+
+          if (needsHorizontalScroll) {
+            return Center(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: gridWidget,
+                ),
+              ),
+            );
+          }
+
+          return Center(child: gridWidget);
         },
       ),
     );
