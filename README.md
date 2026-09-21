@@ -217,32 +217,6 @@ And copied to the root directory as `VibeDeck.apk`.
 
 ---
 
-## 📦 How to Publish Releases on GitHub
-
-For repository maintainers releasing a new version:
-
-1. **Commit & Push Code**:
-   ```bash
-   git add .
-   git commit -m "Release v1.0.0"
-   git push origin main
-   ```
-2. **Build the Release APK**:
-   ```bash
-   build_apk.bat
-   ```
-   *(This outputs `VibeDeck.apk` in the root folder).*
-3. **Draft a New Release on GitHub**:
-   - Navigate to your repository on GitHub (`https://github.com/RashminaFdo/vibedeck`).
-   - On the right sidebar, click **"Releases"** -> **"Draft a new release"**.
-   - Set a tag (e.g. `v1.0.0`) and title (e.g. `VibeDeck v1.0.0 - Initial Release`).
-   - Under **"Attach binaries by dropping them here"**, drag and drop `VibeDeck.apk`.
-   - Click **"Publish release"**.
-4. **End Users Can Now Download Directly**:  
-   Users will be able to download `VibeDeck.apk` with a single click from the Releases tab without needing to run any build scripts or install Flutter!
-
----
-
 ## 📂 Project Structure
 
 ```
