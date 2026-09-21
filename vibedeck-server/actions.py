@@ -316,22 +316,25 @@ def mouse_scroll(dy: float) -> bool:
 
 
 def launch_application(app_target: str) -> bool:
-    """Launches an application, executable, shortcut, or shell command."""
-    target = app_target.strip().strip('"').strip("'")
+    """Launches an application, executable, shortcut, protocol URL, or shell command."""
+    target = app_target.strip()
     logger.info(f"Launching application: {target}")
     
-    # 1. Try direct os.startfile (handles .lnk, .exe, protocols like spotify:, files, etc.)
-    try:
-        os.startfile(target)
-        return True
-    except Exception as e1:
-        logger.debug(f"os.startfile failed for '{target}': {e1}")
+    # 1. Check known protocol URIs or direct files/shortcuts
+    clean_target = target.strip('"').strip("'")
+    if os.path.exists(clean_target) or clean_target.startswith(("steam:", "spotify:", "discord:", "googleplaygames:", "ms-settings:")):
+        try:
+            os.startfile(clean_target)
+            return True
+        except Exception as e1:
+            logger.debug(f"os.startfile direct failed for '{clean_target}': {e1}")
 
     # 2. Known aliases
     known_aliases = {
         "spotify": "spotify:",
         "discord": "discord:",
         "chrome": "chrome",
+        "brave": r"C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe",
         "vscode": "code",
         "code": "code",
         "notepad": "notepad.exe",
@@ -345,10 +348,12 @@ def launch_application(app_target: str) -> bool:
         "steam": "steam:",
     }
     
-    alias_cmd = known_aliases.get(target.lower())
+    alias_cmd = known_aliases.get(clean_target.lower())
     if alias_cmd:
         try:
-            if ":" in alias_cmd:
+            if ":" in alias_cmd and not os.path.isabs(alias_cmd):
+                os.startfile(alias_cmd)
+            elif os.path.exists(alias_cmd):
                 os.startfile(alias_cmd)
             else:
                 subprocess.Popen(f'start "" "{alias_cmd}"', shell=True)
@@ -356,13 +361,18 @@ def launch_application(app_target: str) -> bool:
         except Exception as e2:
             logger.debug(f"Alias launch failed for '{alias_cmd}': {e2}")
 
-    # 3. Fallback: Shell start
+    # 3. Fallback: Shell start with command arguments support
     try:
-        subprocess.Popen(f'start "" "{target}"', shell=True)
+        if " " in target and not target.startswith('"'):
+            # Could be "path/to/exe --arg"
+            subprocess.Popen(target, shell=True)
+        else:
+            subprocess.Popen(f'start "" "{clean_target}"', shell=True)
         return True
     except Exception as e3:
         logger.error(f"Failed to launch app '{target}': {e3}")
         return False
+
 
 
 def get_installed_apps() -> list[dict]:
@@ -447,12 +457,39 @@ def execute_system_command(command: str) -> bool:
             return turn_off_screen()
         elif cmd == "sleep":
             return sleep_pc()
+        elif cmd in ("shutdown", "shutdown_pc"):
+            return shutdown_pc()
+        elif cmd in ("restart", "restart_pc", "reboot"):
+            return restart_pc()
+        elif cmd in ("brightness_up", "bright_up"):
+            return change_brightness(+10)
+        elif cmd in ("brightness_down", "bright_down"):
+            return change_brightness(-10)
+        elif cmd in ("mute", "unmute"):
+            toggle_master_mute()
+            return True
+        elif cmd == "mic_mute":
+            toggle_mic_mute()
+            return True
+        elif cmd in ("deaf", "deafen", "undeafen"):
+            return execute_discord_action("toggle_deafen")
+        elif cmd in ("play_pause", "pause", "play"):
+            return press_media_key("media_play_pause")
+        elif cmd in ("next", "next_track"):
+            return press_media_key("media_next")
+        elif cmd in ("prev", "previous", "prev_track"):
+            return press_media_key("media_prev")
+        elif cmd == "volume_up":
+            return press_media_key("volume_up")
+        elif cmd == "volume_down":
+            return press_media_key("volume_down")
         else:
             logger.warning(f"Unknown system command: {cmd}")
             return False
     except Exception as e:
         logger.error(f"System command failed: {e}")
         return False
+
 
 
 # Core Audio Volume & Microphone Controls
@@ -596,6 +633,45 @@ def sleep_pc() -> bool:
         return False
 
 
+def change_brightness(delta: int) -> bool:
+    """Adjusts display brightness by delta percentage (-100 to +100) using WMI."""
+    logger.info(f"Adjusting brightness by {delta:+d}%...")
+    try:
+        cmd_get = '(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightness).CurrentBrightness'
+        out = subprocess.check_output(['powershell', '-NoProfile', '-Command', cmd_get], text=True).strip()
+        curr = int(out)
+        target = max(10, min(100, curr + delta))
+        cmd_set = f'(Get-WmiObject -Namespace root/wmi -Class WmiMonitorBrightnessMethods).WmiSetBrightness(1, {target})'
+        subprocess.run(['powershell', '-NoProfile', '-Command', cmd_set], check=True)
+        logger.info(f"Brightness changed from {curr}% to {target}%")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to change brightness: {e}")
+        return False
+
+
+def shutdown_pc() -> bool:
+    """Shuts down Windows PC with a 5 second grace period."""
+    logger.info("Initiating PC shutdown...")
+    try:
+        subprocess.Popen("shutdown /s /t 5", shell=True)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to shutdown PC: {e}")
+        return False
+
+
+def restart_pc() -> bool:
+    """Restarts Windows PC with a 5 second grace period."""
+    logger.info("Initiating PC restart...")
+    try:
+        subprocess.Popen("shutdown /r /t 5", shell=True)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to restart PC: {e}")
+        return False
+
+
 def execute_spotify_action(action: str, payload: dict | None = None) -> bool:
     """Executes a specialized Spotify desktop action on Windows."""
     if payload is None:
@@ -671,12 +747,20 @@ def execute_discord_action(action: str, payload: dict | None = None) -> bool:
             logger.info(f"Opening Discord channel: {url}")
             os.startfile(url)
             return True
-        elif act == "toggle_mute":
+        elif act in ("toggle_mute", "mute", "unmute"):
             execute_hotkey(["ctrl", "shift", "m"])
             toggle_mic_mute()
             return True
-        elif act == "toggle_deafen":
+        elif act in ("toggle_deafen", "deafen", "undeafen"):
             return execute_hotkey(["ctrl", "shift", "d"])
+        elif act in ("screenshare", "screen_share"):
+            return execute_hotkey(["alt", "shift", "s"])
+        elif act in ("push_to_talk", "ptt"):
+            return execute_hotkey(["ctrl", "shift", "t"])
+        elif act in ("accept_call", "call", "answer_call"):
+            return execute_hotkey(["ctrl", "enter"])
+        elif act in ("decline_call", "end_call", "disconnect"):
+            return execute_hotkey(["esc"])
         elif act == "open":
             os.startfile("discord:")
             return True
@@ -686,6 +770,7 @@ def execute_discord_action(action: str, payload: dict | None = None) -> bool:
         else:
             logger.warning(f"Unknown Discord action: {act}")
             return False
+
     except Exception as e:
         logger.error(f"Discord action failed: {e}")
         return False

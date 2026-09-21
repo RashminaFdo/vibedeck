@@ -264,6 +264,10 @@ async def handle_message(websocket, message_str: str):
                 actions.sleep_pc()
             elif cmd == "lock":
                 actions.execute_system_command("lock")
+            elif cmd in ("shutdown", "shutdown_pc"):
+                actions.shutdown_pc()
+            elif cmd in ("restart", "restart_pc", "reboot"):
+                actions.restart_pc()
             success = True
         elif action_kind == "type":
             success = actions.type_text(payload.get("text", ""))

@@ -34,6 +34,7 @@ class _DeckScreenState extends State<DeckScreen> {
       WakelockPlus.enable();
     } catch (_) {}
 
+    _conn.startAutoDiscovery();
     _loadInitialData();
 
     _conn.onProfilesReceived = (serverProfiles) {
@@ -50,7 +51,6 @@ class _DeckScreenState extends State<DeckScreen> {
   }
 
   Future<void> _loadInitialData() async {
-    final startTime = DateTime.now();
     final profiles = await StorageService.loadProfiles();
     final lastProfileId = await StorageService.getSelectedProfileId();
 
@@ -60,12 +60,6 @@ class _DeckScreenState extends State<DeckScreen> {
       if (found != -1) idx = found;
     }
 
-    // Ensure splash loader displays for at least 800ms for a seamless intro experience
-    final elapsed = DateTime.now().difference(startTime).inMilliseconds;
-    if (elapsed < 800) {
-      await Future.delayed(Duration(milliseconds: 800 - elapsed));
-    }
-
     if (mounted) {
       setState(() {
         _profiles = profiles;
@@ -73,8 +67,6 @@ class _DeckScreenState extends State<DeckScreen> {
         _isLoading = false;
       });
     }
-
-    _conn.startAutoDiscovery();
   }
 
   DeckProfile? get _currentProfile {
@@ -387,8 +379,8 @@ class _DeckScreenState extends State<DeckScreen> {
                         // Responsive Top Header Bar (Includes Mode Switcher in Landscape!)
                         _buildTopBar(isLandscape),
 
-                        // Live Volume, Mic Mute & Telemetry Bar (ONLY in Deck mode to maximize space in Mouse/Keys)
-                        if (_activeMode == 0) _buildTelemetryBar(isLandscape),
+                        // Live Volume, Mic Mute & Telemetry Bar (ONLY in Portrait Deck mode; in landscape it is moved to the Left Rail!)
+                        if (!isLandscape && _activeMode == 0) _buildTelemetryBar(isLandscape),
 
                         // Horizontal Preset Chips (ONLY in Portrait Deck mode; in landscape it's in Top Bar!)
                         if (!isLandscape && _activeMode == 0) _buildProfileStrip(isLandscape),
@@ -397,9 +389,17 @@ class _DeckScreenState extends State<DeckScreen> {
                         Expanded(
                           child: Padding(
                             padding: EdgeInsets.only(bottom: isLandscape ? 0 : 62),
-                            child: _activeMode == 0
-                                ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
-                                : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
+                            child: Row(
+                              children: [
+                                if (isLandscape && _activeMode == 0)
+                                  _buildLandscapeLeftControlRail(),
+                                Expanded(
+                                  child: _activeMode == 0
+                                      ? (profile == null ? _buildEmptyState() : _buildGrid(profile, isLandscape))
+                                      : (_activeMode == 1 ? const TrackpadWidget() : const KeyboardRemoteWidget()),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -861,6 +861,144 @@ class _DeckScreenState extends State<DeckScreen> {
                   fontWeight: FontWeight.bold,
                   color: _conn.ramPercent > 85 ? const Color(0xFFFF2A6D) : Colors.white60,
                 ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Vertical Left Control Rail in Landscape Mode (Saves 100% of vertical grid height!)
+  Widget _buildLandscapeLeftControlRail() {
+    return ListenableBuilder(
+      listenable: _conn,
+      builder: (context, _) {
+        final isConnected = _conn.state == VibeConnectionState.connected;
+        if (!isConnected) return const SizedBox.shrink();
+
+        return Container(
+          width: 52,
+          margin: const EdgeInsets.only(left: 4, right: 3, top: 2, bottom: 2),
+          decoration: BoxDecoration(
+            color: const Color(0xE6101320),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white12, width: 1),
+            boxShadow: const [
+              BoxShadow(color: Colors.black45, blurRadius: 8, offset: Offset(2, 0)),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+          child: Column(
+            children: [
+              // 1. Speaker Mute Toggle
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                icon: Icon(
+                  _conn.isMuted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                  color: _conn.isMuted ? const Color(0xFFFF2A6D) : VibeTheme.cyanNeon,
+                  size: 19,
+                ),
+                tooltip: _conn.isMuted ? "Unmute Speakers" : "Mute Speakers",
+                onPressed: () => _conn.toggleMute(),
+              ),
+
+              // 2. Volume % text
+              Text(
+                "${_conn.masterVolume}%",
+                style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white70),
+              ),
+
+              const SizedBox(height: 2),
+
+              // 3. Vertical Volume Slider (Bottom to Top)
+              Expanded(
+                child: RotatedBox(
+                  quarterTurns: 3,
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 3.0,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 8),
+                      activeTrackColor: VibeTheme.cyanNeon,
+                      inactiveTrackColor: Colors.white12,
+                      thumbColor: VibeTheme.cyanNeon,
+                    ),
+                    child: Slider(
+                      value: _conn.masterVolume.toDouble(),
+                      min: 0,
+                      max: 100,
+                      onChanged: (val) => _conn.setVolume(val.round()),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              // 4. Mic Mute Neon Toggle
+              InkWell(
+                onTap: () => _conn.toggleMicMute(),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  width: 44,
+                  padding: const EdgeInsets.symmetric(vertical: 3),
+                  decoration: BoxDecoration(
+                    color: _conn.isMicMuted
+                        ? const Color(0xFFFF2A6D).withValues(alpha: 0.2)
+                        : const Color(0xFF00FF88).withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: _conn.isMicMuted ? const Color(0xFFFF2A6D) : const Color(0xFF00FF88),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _conn.isMicMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                        size: 13,
+                        color: _conn.isMicMuted ? const Color(0xFFFF2A6D) : const Color(0xFF00FF88),
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        _conn.isMicMuted ? "OFF" : "ON",
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.bold,
+                          color: _conn.isMicMuted ? const Color(0xFFFF2A6D) : const Color(0xFF00FF88),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              // 5. Stacked CPU & RAM Mini Badges
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "C ${_conn.cpuPercent}%",
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.bold,
+                      color: _conn.cpuPercent > 80 ? const Color(0xFFFF2A6D) : Colors.white54,
+                    ),
+                  ),
+                  Text(
+                    "R ${_conn.ramPercent}%",
+                    style: TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.bold,
+                      color: _conn.ramPercent > 85 ? const Color(0xFFFF2A6D) : Colors.white54,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
